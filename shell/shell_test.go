@@ -234,3 +234,18 @@ func TestHeredoc(t *testing.T) {
 		t.Fatalf("got %q", out.String())
 	}
 }
+
+func TestBinPopulated(t *testing.T) {
+	got := run(t, "ls /bin | wc -l")
+	if strings.TrimSpace(got) == "0" {
+		t.Fatalf("/bin is empty")
+	}
+	got = run(t, "ls /bin | grep -c grep")
+	if strings.TrimSpace(got) != "1" {
+		t.Fatalf("grep not in /bin: %q", got)
+	}
+	got = run(t, "cat /bin/tree")
+	if !strings.Contains(got, "directory tree") {
+		t.Fatalf("stub content: %q", got)
+	}
+}

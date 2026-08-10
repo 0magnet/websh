@@ -55,7 +55,7 @@ TinyGo doesn't build the interpreter yet (reflection); a reflection-free interp 
 ## Roadmap
 
 - More u-root applets as the fork gains js/wasm build support
-- Networking applets (`curl`, `nc`) — in the browser directly, and via the [skywire wasm visor](https://github.com/skycoin/skywire) for pty/network reach beyond the page origin
+- Networking applets (`curl`, `nc`) built on the browser's fetch and WebSocket APIs
 - TinyGo compatibility (reflection-free interpreter fork)
 
 ## License

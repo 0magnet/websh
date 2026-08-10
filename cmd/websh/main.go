@@ -106,7 +106,6 @@ func main() {
 	s := &session{term: term, sh: sh, stdinW: stdinW, lines: make(chan string, 8)}
 	if persisted {
 		s.storage = storage
-		s.sigs = storage.syncFS(vfs, nil) // baseline snapshot (also persists the seed)
 		shell.RegisterApplet("reset-fs", "wipe the persisted filesystem and reload", func(ctx context.Context, _ *shell.Shell, hc *interp.HandlerContext, args []string) int {
 			if err := storage.clear(); err != nil {
 				fmt.Fprintf(hc.Stderr, "reset-fs: %v\n", err)
@@ -116,6 +115,8 @@ func main() {
 			js.Global().Get("location").Call("reload")
 			return 0
 		})
+		sh.PopulateBin() // include reset-fs in /bin
+		s.sigs = storage.syncFS(vfs, nil) // baseline snapshot (also persists the seed)
 	}
 
 	s.editor = &shell.LineEditor{

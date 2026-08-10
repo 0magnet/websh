@@ -40,7 +40,7 @@ func init() {
 		"head":     {"first lines of files (-n count)", runHead},
 		"tail":     {"last lines of files (-n count)", runTail},
 		"wc":       {"count lines, words, bytes (-l -w -c)", runWc},
-		"grep":     {"search with regexps (-i -v -n)", runGrep},
+		"grep":     {"search with regexps (-i -v -n -c)", runGrep},
 		"seq":      {"print number sequences", runSeq},
 		"sort":     {"sort lines (-r reverse, -n numeric)", runSort},
 		"uniq":     {"filter repeated lines (-c count)", runUniq},
@@ -449,14 +449,17 @@ func runGrep(ctx context.Context, s *Shell, hc *interp.HandlerContext, args []st
 	if err != nil {
 		return fail(hc, "grep", err)
 	}
-	matched := false
+	count := 0
 	for i, l := range lines {
 		m := re.MatchString(l)
 		if flags['v'] {
 			m = !m
 		}
 		if m {
-			matched = true
+			count++
+			if flags['c'] {
+				continue
+			}
 			if flags['n'] {
 				fmt.Fprintf(hc.Stdout, "%d:%s\n", i+1, l)
 			} else {
@@ -464,7 +467,10 @@ func runGrep(ctx context.Context, s *Shell, hc *interp.HandlerContext, args []st
 			}
 		}
 	}
-	if !matched {
+	if flags['c'] {
+		fmt.Fprintln(hc.Stdout, count)
+	}
+	if count == 0 {
 		return 1
 	}
 	return 0

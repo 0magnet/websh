@@ -65,7 +65,19 @@ func New(vfs afero.Fs, stdin io.Reader, stdout, stderr io.Writer) (*Shell, error
 	// virtual cwd directly instead
 	runner.Dir = "/home/user"
 	s.Runner = runner
+	s.PopulateBin()
 	return s, nil
+}
+
+// PopulateBin creates a stub file in /bin for every registered applet
+// so the command set is discoverable with ls. Call again after
+// registering extra applets.
+func (s *Shell) PopulateBin() {
+	_ = s.FS.MkdirAll("/bin", 0o755)
+	for name, a := range applets {
+		_ = afero.WriteFile(s.FS, "/bin/"+name,
+			[]byte("websh built-in applet: "+a.help+"\n"), 0o755)
+	}
 }
 
 // Seed populates a fresh filesystem with the default home directory.
@@ -81,6 +93,8 @@ func Seed(vfs afero.Fs) {
 			"in WebAssembly behind an xterm-go terminal. The filesystem you are\n" +
 			"looking at lives in memory.\n\n" +
 			"Things to try:\n" +
+			"  ls /bin        # every available command lives here\n" +
+			"  help           # ...with descriptions\n" +
 			"  ls -l /etc\n" +
 			"  cat /etc/motd\n" +
 			"  echo hello > hi.txt; cat hi.txt\n" +
