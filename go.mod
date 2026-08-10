@@ -3,10 +3,10 @@ module github.com/0magnet/websh
 go 1.25.7
 
 require (
-	github.com/0magnet/sh/v3 v3.13.2-0.20260810205315-0259711977cd
-	github.com/0magnet/u-root v0.16.1-0.20260810204129-5f58765a54d9
+	github.com/0magnet/afero v1.15.1-0.20260810212219-f42b8e681b6d
+	github.com/0magnet/sh/v3 v3.13.2-0.20260810212216-dd2820112a26
+	github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9
 	github.com/0magnet/xterm-go v0.0.0-20260810205834-539654a1b7a3
-	github.com/spf13/afero v1.15.0
 )
 
 require (

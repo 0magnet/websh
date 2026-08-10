@@ -18,11 +18,11 @@ Three Go libraries composed into one wasm binary:
 - **[0magnet/sh](https://github.com/0magnet/sh)** — the shell language (a fork of [mvdan/sh](https://github.com/mvdan/sh)), a real Bash/POSIX interpreter: pipes, redirections, globbing, functions, heredocs, command substitution, arithmetic, control flow.
 - **[0magnet/u-root](https://github.com/0magnet/u-root)** — pure-Go userland utilities (currently `pkg/ls` for long-listing format; more as the fork grows js support).
 
-Plus [afero](https://github.com/spf13/afero) providing the filesystem: an in-memory fs wired into the interpreter's open/stat/readdir/access handlers, **persisted to IndexedDB** — your files survive page reloads (`reset-fs` wipes).
+Plus **[0magnet/afero](https://github.com/0magnet/afero)** (an [afero](https://github.com/spf13/afero) fork) providing the filesystem: an in-memory fs wired into the interpreter's open/stat/readdir/access handlers, **persisted to IndexedDB** — your files survive page reloads (`reset-fs` wipes).
 
 ## Why forks
 
-The interpreter and userland run in an environment upstream doesn't target: no OS pipes, no subprocesses, no `Getwd`, 32-bit ints under TinyGo. The forks carry those changes without being gated on upstream review — e.g. `0magnet/sh` abstracts the runner's stdin so pipelines and heredocs use in-process `io.Pipe` on js/wasm, and `0magnet/u-root` has js build variants for `pkg/ls`.
+The interpreter, userland and filesystem run in an environment upstream doesn't target: no OS pipes, no subprocesses, no `Getwd`, and TinyGo's incomplete `os`/`syscall`. The forks carry those changes without being gated on upstream review — `0magnet/sh` abstracts the runner's stdin so pipelines and heredocs use in-process `io.Pipe` on js/wasm, `0magnet/u-root` has js/tinygo build variants for `pkg/ls`, and `0magnet/afero` drops the `net/http` dependency and shims the `os` functions TinyGo lacks.
 
 ## What works
 
@@ -47,17 +47,20 @@ The `shell` package has no `syscall/js` — the whole engine (interpreter, files
 ## Building
 
 ```bash
+# TinyGo (what the live demo ships — ~2 MB):
+tinygo build -target wasm -no-debug -o docs/main.wasm ./cmd/websh
+# or standard Go (~9 MB):
 GOOS=js GOARCH=wasm go build -o docs/main.wasm ./cmd/websh
 ```
 
-TinyGo doesn't build the interpreter yet (reflection); a reflection-free interp is on the fork's roadmap.
+Both toolchains are supported; the forks carry the TinyGo compatibility shims. Use the matching `wasm_exec.js` for whichever compiled the binary.
 
 ## Roadmap
 
 - More u-root applets as the fork gains js/wasm build support
 - Networking applets (`curl`, `nc`) built on the browser's fetch and WebSocket APIs
-- TinyGo compatibility (reflection-free interpreter fork)
+- `awk`/`jq` via goawk and gojq, tab completion, a pager, file download/upload
 
 ## License
 
-MIT (websh). The forks retain their upstream licenses: sh (BSD-3-Clause), u-root (BSD-3-Clause), xterm-go (MIT).
+MIT (websh). The forks retain their upstream licenses: sh (BSD-3-Clause), u-root (BSD-3-Clause), afero (Apache-2.0), xterm-go (MIT).

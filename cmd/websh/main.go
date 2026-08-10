@@ -15,7 +15,7 @@ import (
 	"github.com/0magnet/sh/v3/interp"
 	xterm "github.com/0magnet/xterm-go"
 	"github.com/0magnet/xterm-go/vt"
-	"github.com/spf13/afero"
+	"github.com/0magnet/afero"
 
 	"github.com/0magnet/websh/shell"
 )

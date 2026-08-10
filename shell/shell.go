@@ -16,7 +16,7 @@ import (
 	"github.com/0magnet/sh/v3/expand"
 	"github.com/0magnet/sh/v3/interp"
 	"github.com/0magnet/sh/v3/syntax"
-	"github.com/spf13/afero"
+	"github.com/0magnet/afero"
 )
 
 // Shell is an interpreter bound to a virtual filesystem.
