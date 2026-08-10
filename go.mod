@@ -10,7 +10,10 @@ require (
 )
 
 require (
+	github.com/benhoyt/goawk v1.31.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/itchyny/gojq v0.12.19 // indirect
+	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect
 	golang.org/x/text v0.39.0 // indirect

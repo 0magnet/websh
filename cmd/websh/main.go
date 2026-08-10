@@ -9,6 +9,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
+	"sort"
 	"strings"
 	"syscall/js"
 
@@ -103,6 +105,7 @@ func main() {
 		select {}
 	}
 
+	registerBrowserApplets()
 	s := &session{term: term, sh: sh, stdinW: stdinW, lines: make(chan string, 8)}
 	if persisted {
 		s.storage = storage
@@ -115,9 +118,9 @@ func main() {
 			js.Global().Get("location").Call("reload")
 			return 0
 		})
-		sh.PopulateBin() // include reset-fs in /bin
 		s.sigs = storage.syncFS(vfs, nil) // baseline snapshot (also persists the seed)
 	}
+	sh.PopulateBin() // include the browser applets (and reset-fs) in /bin
 
 	s.editor = &shell.LineEditor{
 		Echo: func(str string) { term.WriteString(str) },
@@ -141,6 +144,41 @@ func main() {
 			term.WriteString("\x1b[2J\x1b[H")
 			s.writePrompt()
 			term.WriteString(s.editor.Line())
+		},
+		Complete: func(word string, isFirstWord bool) []string {
+			if isFirstWord && !strings.Contains(word, "/") {
+				var out []string
+				for _, name := range append(shell.AppletNames(), shellBuiltins...) {
+					if strings.HasPrefix(name, word) {
+						out = append(out, name)
+					}
+				}
+				sort.Strings(out)
+				return out
+			}
+			// path completion against the virtual filesystem
+			dir, base := filepath.Split(word)
+			searchDir := dir
+			if !filepath.IsAbs(searchDir) {
+				searchDir = filepath.Join(sh.Dir(), dir)
+			}
+			infos, err := afero.ReadDir(sh.FS, filepath.Clean(searchDir))
+			if err != nil {
+				return nil
+			}
+			var out []string
+			for _, info := range infos {
+				if !strings.HasPrefix(info.Name(), base) {
+					continue
+				}
+				cand := dir + info.Name()
+				if info.IsDir() {
+					cand += "/"
+				}
+				out = append(out, cand)
+			}
+			sort.Strings(out)
+			return out
 		},
 	}
 
@@ -206,4 +244,12 @@ func (s *session) run() {
 		}
 		s.writePrompt()
 	}
+}
+
+// shellBuiltins are the interpreter builtins offered by completion.
+var shellBuiltins = []string{
+	"cd", "pwd", "echo", "printf", "read", "exit", "export", "unset",
+	"source", "test", "true", "false", "set", "shift", "local",
+	"declare", "eval", "alias", "unalias", "type", "return", "break",
+	"continue", "pushd", "popd", "dirs", "let", "getopts", "wait",
 }

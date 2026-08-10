@@ -20,6 +20,10 @@ type LineEditor struct {
 	// Redraw must repaint prompt+content with the cursor n runes back
 	// from the end (used by history navigation and mid-line edits).
 	Redraw func(content string, cursorBack int)
+	// Complete returns candidates for the word being completed. When
+	// isFirstWord, the word is a command name; otherwise a path.
+	// Directory candidates should end in "/".
+	Complete func(word string, isFirstWord bool) []string
 
 	buf    []rune
 	cursor int
@@ -141,8 +145,10 @@ func (e *LineEditor) Input(data string) {
 			e.buf = append(e.buf[:i], e.buf[e.cursor:]...)
 			e.cursor = i
 			e.redraw()
+		case '\t':
+			e.completeWord()
 		default:
-			if r >= 32 || r == '\t' {
+			if r >= 32 {
 				if e.cursor == len(e.buf) {
 					e.buf = append(e.buf, r)
 					e.cursor++
@@ -202,4 +208,54 @@ func (e *LineEditor) handleCSI(seq string) {
 			e.redraw()
 		}
 	}
+}
+
+// completeWord performs tab completion at the cursor.
+func (e *LineEditor) completeWord() {
+	if e.Complete == nil {
+		return
+	}
+	// find the start of the word under the cursor
+	start := e.cursor
+	for start > 0 && e.buf[start-1] != ' ' {
+		start--
+	}
+	word := string(e.buf[start:e.cursor])
+	isFirstWord := strings.TrimSpace(string(e.buf[:start])) == ""
+
+	candidates := e.Complete(word, isFirstWord)
+	if len(candidates) == 0 {
+		return
+	}
+
+	insert := func(s string) {
+		rs := []rune(s)
+		e.buf = append(e.buf[:e.cursor], append(rs, e.buf[e.cursor:]...)...)
+		e.cursor += len(rs)
+		e.redraw()
+	}
+
+	if len(candidates) == 1 {
+		completion := candidates[0][len(word):]
+		if !strings.HasSuffix(candidates[0], "/") {
+			completion += " "
+		}
+		insert(completion)
+		return
+	}
+
+	// several candidates: extend to the longest common prefix
+	common := candidates[0]
+	for _, c := range candidates[1:] {
+		for !strings.HasPrefix(c, common) {
+			common = common[:len(common)-1]
+		}
+	}
+	if len(common) > len(word) {
+		insert(common[len(word):])
+		return
+	}
+	// no progress: list the candidates
+	e.Echo("\r\n" + strings.Join(candidates, "  ") + "\r\n")
+	e.redraw()
 }

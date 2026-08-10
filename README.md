@@ -2,7 +2,7 @@
 
 A bash-like shell running entirely in your browser — no server, no container, no emulator. WebAssembly all the way down.
 
-**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 2 MB — the default) · [standard Go build](https://0magnet.github.io/websh/go/) (8 MB)
+**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.4 MB — the default) · [standard Go build](https://0magnet.github.io/websh/go/) (12 MB)
 
 ```
 user@websh:~$ for i in $(seq 3); do echo line $i; done | grep 2
@@ -28,8 +28,15 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 
 - The shell language: `if`/`for`/`while`/`case`, functions, `$(...)`, `$(( ))`, globs, heredocs, `&&`/`||`, multi-line input with continuation prompts, `source`
 - Pipes and redirections against the virtual filesystem
-- ~26 applets: `ls cat mkdir rm cp mv touch head tail wc grep seq sort uniq tree basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset ...`)
-- Line editing: history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears
+- **`awk`** ([goawk](https://github.com/benhoyt/goawk)) and **`jq`** ([gojq](https://github.com/itchyny/gojq)) — the real things, as pure-Go libraries
+- ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
+- **Browser superpowers**: `curl` (fetch, CORS applies), `download` (vfs file → your Downloads), `upload` (file picker → vfs), `pbcopy`/`pbpaste` (system clipboard)
+- Line editing: **tab completion** (commands and paths), history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears
+
+```
+user@websh:~$ curl -s https://api.github.com/repos/0magnet/websh | jq -r .description
+bash in your browser: xterm-go + a Go shell interpreter + IndexedDB filesystem, all in WebAssembly
+```
 - Persistence: the filesystem diffs+flushes to IndexedDB after every command
 
 ## Architecture
@@ -58,8 +65,8 @@ Both toolchains are supported and both are deployed ([TinyGo](https://0magnet.gi
 ## Roadmap
 
 - More u-root applets as the fork gains js/wasm build support
-- Networking applets (`curl`, `nc`) built on the browser's fetch and WebSocket APIs
-- `awk`/`jq` via goawk and gojq, tab completion, a pager, file download/upload
+- A pager (`less`) and a small `vi`-like editor (the terminal machinery is ready)
+- `nc`-style applets on WebSocket
 
 ## License
 

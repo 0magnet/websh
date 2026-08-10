@@ -249,3 +249,151 @@ func TestBinPopulated(t *testing.T) {
 		t.Fatalf("stub content: %q", got)
 	}
 }
+
+func TestTextTools(t *testing.T) {
+	got := run(t, "printf 'a:b:c\\n' | cut -d: -f2")
+	if got != "b\n" {
+		t.Fatalf("cut = %q", got)
+	}
+	got = run(t, "echo hello | tr a-z A-Z")
+	if got != "HELLO\n" {
+		t.Fatalf("tr = %q", got)
+	}
+	got = run(t, "echo hello | tr -d l")
+	if got != "heo\n" {
+		t.Fatalf("tr -d = %q", got)
+	}
+	got = run(t, "echo foo bar | sed s/bar/baz/")
+	if got != "foo baz\n" {
+		t.Fatalf("sed = %q", got)
+	}
+	got = run(t, "printf 'aa aa\\n' | sed s/a/b/g")
+	if got != "bb bb\n" {
+		t.Fatalf("sed g = %q", got)
+	}
+	got = run(t, "seq 3 | tac")
+	if got != "3\n2\n1\n" {
+		t.Fatalf("tac = %q", got)
+	}
+	got = run(t, "printf 'x\\ny\\n' | nl | cut -c6-")
+	if !strings.Contains(got, "1\tx") {
+		t.Fatalf("nl = %q", got)
+	}
+}
+
+func TestFindXargsHash(t *testing.T) {
+	got := run(t, "mkdir -p a/b", "touch a/x.txt a/b/y.txt a/b/z.md", "find a -name '*.txt' | sort")
+	if got != "a/b/y.txt\na/x.txt\n" {
+		t.Fatalf("find = %q", got)
+	}
+	got = run(t, "find /etc -type f")
+	if got != "/etc/motd\n" {
+		t.Fatalf("find type = %q", got)
+	}
+	got = run(t, "seq 3 | xargs echo nums:")
+	if got != "nums: 1 2 3\n" {
+		t.Fatalf("xargs echo = %q", got)
+	}
+	got = run(t, "echo /etc/motd | xargs wc -l")
+	if strings.TrimSpace(got) != "1" {
+		t.Fatalf("xargs wc = %q", got)
+	}
+	got = run(t, "printf hello | md5sum")
+	if !strings.HasPrefix(got, "5d41402abc4b2a76b9719d911017c592") {
+		t.Fatalf("md5 = %q", got)
+	}
+	got = run(t, "printf hello | sha256sum")
+	if !strings.HasPrefix(got, "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824") {
+		t.Fatalf("sha256 = %q", got)
+	}
+	got = run(t, "printf hi | base64", "printf aGk= | base64 -d")
+	if got != "aGk=\nhi" {
+		t.Fatalf("base64 = %q", got)
+	}
+	got = run(t, "printf AB | xxd")
+	if !strings.Contains(got, "4142") || !strings.Contains(got, "AB") {
+		t.Fatalf("xxd = %q", got)
+	}
+	got = run(t, "du -s /etc | cut -f2")
+	if got != "/etc\n" {
+		t.Fatalf("du = %q", got)
+	}
+	got = run(t, "chmod 700 demo.sh", "stat demo.sh")
+	if !strings.Contains(got, "rwx------") {
+		t.Fatalf("chmod/stat = %q", got)
+	}
+}
+
+func TestAwk(t *testing.T) {
+	got := run(t, "seq 5 | awk '{ sum += $1 } END { print sum }'")
+	if got != "15\n" {
+		t.Fatalf("awk sum = %q", got)
+	}
+	got = run(t, "printf 'a:1\\nb:2\\n' | awk -F: '{ print $2, $1 }'")
+	if got != "1 a\n2 b\n" {
+		t.Fatalf("awk -F = %q", got)
+	}
+	got = run(t, "awk '/shell/ { print NR }' demo.sh")
+	if got != "1\n" {
+		t.Fatalf("awk file = %q", got)
+	}
+	got = run(t, "echo | awk -v x=7 '{ print x * 6 }'")
+	if got != "42\n" {
+		t.Fatalf("awk -v = %q", got)
+	}
+}
+
+func TestJq(t *testing.T) {
+	got := run(t, `echo '{"name":"websh","tags":["wasm","shell"]}' | jq -r .name`)
+	if got != "websh\n" {
+		t.Fatalf("jq .name = %q", got)
+	}
+	got = run(t, `echo '{"a":[1,2,3]}' | jq -c '.a | map(. * 2)'`)
+	if got != "[2,4,6]\n" {
+		t.Fatalf("jq map = %q", got)
+	}
+	got = run(t, `echo '[{"x":1},{"x":2}]' | jq '[.[].x] | add'`)
+	if got != "3\n" {
+		t.Fatalf("jq add = %q", got)
+	}
+}
+
+func TestTabCompletion(t *testing.T) {
+	var echoed strings.Builder
+	e := &LineEditor{
+		Echo:   func(s string) { echoed.WriteString(s) },
+		Redraw: func(content string, back int) {},
+		Complete: func(word string, isFirstWord bool) []string {
+			if isFirstWord {
+				var out []string
+				for _, n := range []string{"grep", "gzip", "cat"} {
+					if strings.HasPrefix(n, word) {
+						out = append(out, n)
+					}
+				}
+				return out
+			}
+			return []string{"demo.sh"}
+		},
+	}
+	// unique command completes with trailing space
+	e.Input("c\t")
+	if e.Line() != "cat " {
+		t.Fatalf("line = %q", e.Line())
+	}
+	// ambiguous prefix extends to common prefix only
+	e.Reset()
+	e.Input("g\t")
+	if e.Line() != "g" { // no progress beyond "g" (grep/gzip share only "g")
+		t.Fatalf("ambiguous line = %q", e.Line())
+	}
+	if !strings.Contains(echoed.String(), "grep  gzip") {
+		t.Fatalf("candidates not listed: %q", echoed.String())
+	}
+	// second word completes as a path
+	e.Reset()
+	e.Input("cat de\t")
+	if e.Line() != "cat demo.sh " {
+		t.Fatalf("path completion = %q", e.Line())
+	}
+}

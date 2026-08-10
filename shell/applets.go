@@ -58,6 +58,16 @@ func init() {
 	}
 }
 
+// AppletNames returns the registered applet names, sorted.
+func AppletNames() []string {
+	names := make([]string, 0, len(applets))
+	for name := range applets {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 // RegisterApplet adds (or replaces) an applet — used by embedders to
 // expose environment-specific commands.
 func RegisterApplet(name, help string, run func(ctx context.Context, s *Shell, hc *interp.HandlerContext, args []string) int) {
