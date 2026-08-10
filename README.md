@@ -30,7 +30,9 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 - Pipes and redirections against the virtual filesystem
 - **`awk`** ([goawk](https://github.com/benhoyt/goawk)) and **`jq`** ([gojq](https://github.com/itchyny/gojq)) — the real things, as pure-Go libraries
 - ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
-- **Browser superpowers**: `curl` (fetch, CORS applies), `download` (vfs file → your Downloads), `upload` (file picker → vfs), `pbcopy`/`pbpaste` (system clipboard)
+- **A text editor**: `edit file` — full-screen, in the spirit of [skywire](https://github.com/skycoin/skywire)'s femto-based `edit` command (Ctrl+S save, Ctrl+Q quit, Ctrl+K cut)
+- **A pager**: `less`/`more` (space/b page, j/k line, g/G ends, q quits)
+- **Browser superpowers**: `curl` (fetch, CORS applies), `nc` (WebSocket netcat), `download` (vfs file → your Downloads), `upload` (file picker → vfs), `pbcopy`/`pbpaste` (system clipboard)
 - Line editing: **tab completion** (commands and paths), history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears
 
 ```
@@ -65,8 +67,7 @@ Both toolchains are supported and both are deployed ([TinyGo](https://0magnet.gi
 ## Roadmap
 
 - More u-root applets as the fork gains js/wasm build support
-- A pager (`less`) and a small `vi`-like editor (the terminal machinery is ready)
-- `nc`-style applets on WebSocket
+- Literal femto/tview support would need a rename-chain of forks (tcell's tty screen is excluded from js builds); the current `edit` keeps femto's keybindings without the dependency chain
 
 ## License
 

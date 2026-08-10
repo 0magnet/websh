@@ -2,6 +2,8 @@ package shell
 
 import (
 	"context"
+
+	"github.com/0magnet/afero"
 	"strings"
 	"testing"
 	"time"
@@ -395,5 +397,84 @@ func TestTabCompletion(t *testing.T) {
 	e.Input("cat de\t")
 	if e.Line() != "cat demo.sh " {
 		t.Fatalf("path completion = %q", e.Line())
+	}
+}
+
+// feedShell runs a shell whose stdin is scripted, for full-screen
+// applets like edit and less.
+func feedShell(t *testing.T, stdin string, lines ...string) (*Shell, string) {
+	t.Helper()
+	var out strings.Builder
+	sh, err := New(nil, strings.NewReader(stdin), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	for _, line := range lines {
+		sh.Run(ctx, line)
+	}
+	return sh, out.String()
+}
+
+func TestEditCreateAndSave(t *testing.T) {
+	// type two lines, Ctrl+S, Ctrl+Q
+	stdin := "hello\rworld\x13\x11"
+	sh, out := feedShell(t, stdin, "edit note.txt")
+	data, err := afero.ReadFile(sh.FS, "/home/user/note.txt")
+	if err != nil {
+		t.Fatalf("file not saved: %v", err)
+	}
+	if string(data) != "hello\nworld\n" {
+		t.Fatalf("content = %q", string(data))
+	}
+	if !strings.Contains(out, "\x1b[?1049h") || !strings.Contains(out, "\x1b[?1049l") {
+		t.Fatal("alt screen not used")
+	}
+	if !strings.Contains(out, "saved 2 lines") {
+		t.Fatalf("no save message in %q", out[len(out)-200:])
+	}
+}
+
+func TestEditModify(t *testing.T) {
+	// open existing file, go to end of first line, append "!", save+quit
+	sh, _ := feedShell(t, "", "echo abc > f.txt", "echo def >> f.txt")
+	var out strings.Builder
+	sh2, err := New(nil, strings.NewReader("\x1b[F!\x13\x11"), &out, &out)
+	_ = sh2
+	if err != nil {
+		t.Fatal(err)
+	}
+	// reuse first shell's FS so the file exists
+	sh2.FS = sh.FS
+	sh2.Run(context.Background(), "edit f.txt")
+	data, _ := afero.ReadFile(sh.FS, "/home/user/f.txt")
+	if string(data) != "abc!\ndef\n" {
+		t.Fatalf("content = %q", string(data))
+	}
+}
+
+func TestEditBackspaceDeleteNav(t *testing.T) {
+	// "abx<bs>c" -> abc ; then down, home, del removes 'd'
+	stdin := "abx\x7fc\r" + "def" + "\x1b[H" + "\x1b[3~" + "\x13\x11"
+	sh, _ := feedShell(t, stdin, "edit t.txt")
+	data, _ := afero.ReadFile(sh.FS, "/home/user/t.txt")
+	if string(data) != "abc\nef\n" {
+		t.Fatalf("content = %q", string(data))
+	}
+}
+
+func TestLessPager(t *testing.T) {
+	// stdin script: space (page down), q (quit)
+	sh, out := feedShell(t, " q", "seq 100 > big.txt", "less big.txt")
+	_ = sh
+	if !strings.Contains(out, "\x1b[?1049h") {
+		t.Fatal("less did not use alt screen")
+	}
+	if !strings.Contains(out, "big.txt") {
+		t.Fatal("status bar missing")
+	}
+	// after one page down on 24-line default, line 25 should render
+	if !strings.Contains(out, "25") {
+		t.Fatalf("page down did not render next page")
 	}
 }

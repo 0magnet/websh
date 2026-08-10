@@ -7,12 +7,12 @@ require (
 	github.com/0magnet/sh/v3 v3.13.2-0.20260810212216-dd2820112a26
 	github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9
 	github.com/0magnet/xterm-go v0.0.0-20260810205834-539654a1b7a3
+	github.com/benhoyt/goawk v1.31.0
+	github.com/itchyny/gojq v0.12.19
 )
 
 require (
-	github.com/benhoyt/goawk v1.31.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/itchyny/gojq v0.12.19 // indirect
 	github.com/itchyny/timefmt-go v0.1.8 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/term v0.45.0 // indirect

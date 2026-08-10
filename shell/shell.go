@@ -24,6 +24,13 @@ type Shell struct {
 	FS     afero.Fs
 	Runner *interp.Runner
 
+	// RawMode, when set by the embedder, toggles raw terminal input:
+	// no echo and no newline translation (used by full-screen applets
+	// like less).
+	RawMode func(on bool)
+	// Size, when set, reports the terminal dimensions.
+	Size func() (cols, rows int)
+
 	parser  *syntax.Parser
 	pending strings.Builder // continuation lines of an incomplete input
 }

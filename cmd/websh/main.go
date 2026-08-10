@@ -36,6 +36,7 @@ type session struct {
 	editor *shell.LineEditor
 
 	running   bool
+	rawInput  bool
 	cancelRun context.CancelFunc
 	stdinW    *io.PipeWriter
 
@@ -182,8 +183,18 @@ func main() {
 		},
 	}
 
+	// full-screen applets (less) take raw input and know the size
+	sh.RawMode = func(on bool) { s.rawInput = on }
+	sh.Size = func() (int, int) { return term.Core.Cols(), term.Core.Rows() }
+
 	term.Core.OnData = func(data string) {
 		if s.running {
+			if s.rawInput {
+				// a full-screen applet owns the terminal: raw bytes,
+				// no echo; Ctrl+C is passed through for it to handle
+				go s.stdinW.Write([]byte(data))
+				return
+			}
 			// a command is reading stdin: pass input through (with
 			// echo and CRLF translation), Ctrl+C cancels
 			if strings.Contains(data, "\x03") {

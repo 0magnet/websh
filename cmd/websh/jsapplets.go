@@ -6,6 +6,7 @@ package main
 // from main so the pure-Go shell package stays js-free.
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -58,6 +59,7 @@ func registerBrowserApplets() {
 	shell.RegisterApplet("download", "save a file from the shell to your Downloads", runDownload)
 	shell.RegisterApplet("upload", "pick a local file and copy it into the shell", runUpload)
 	shell.RegisterApplet("curl", "fetch a URL (-o file; CORS applies)", runCurl)
+	shell.RegisterApplet("nc", "WebSocket netcat: pipe lines to/from a ws:// endpoint", runNc)
 	shell.RegisterApplet("pbcopy", "copy stdin to the system clipboard", runPbcopy)
 	shell.RegisterApplet("pbpaste", "paste the system clipboard to stdout", runPbpaste)
 }
@@ -232,4 +234,80 @@ func runPbpaste(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, 
 	}
 	fmt.Fprint(hc.Stdout, text.String())
 	return 0
+}
+
+func runNc(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, args []string) int {
+	if len(args) == 0 {
+		fmt.Fprintln(hc.Stderr, "usage: nc <ws://host/path | wss://host/path>")
+		return 1
+	}
+	url := args[0]
+	if !strings.HasPrefix(url, "ws://") && !strings.HasPrefix(url, "wss://") {
+		url = "wss://" + url
+	}
+	ws := js.Global().Get("WebSocket").New(url)
+	ws.Set("binaryType", "arraybuffer")
+
+	closed := make(chan int, 1)
+	onOpen := js.FuncOf(func(js.Value, []js.Value) any {
+		fmt.Fprintf(hc.Stderr, "nc: connected to %s\n", url)
+		return nil
+	})
+	onMessage := js.FuncOf(func(_ js.Value, cbArgs []js.Value) any {
+		data := cbArgs[0].Get("data")
+		if data.Type() == js.TypeString {
+			fmt.Fprintln(hc.Stdout, data.String())
+		} else {
+			u8 := js.Global().Get("Uint8Array").New(data)
+			buf := make([]byte, u8.Get("length").Int())
+			js.CopyBytesToGo(buf, u8)
+			hc.Stdout.Write(buf)
+		}
+		return nil
+	})
+	onClose := js.FuncOf(func(js.Value, []js.Value) any {
+		select {
+		case closed <- 0:
+		default:
+		}
+		return nil
+	})
+	onError := js.FuncOf(func(js.Value, []js.Value) any {
+		fmt.Fprintln(hc.Stderr, "nc: connection error")
+		select {
+		case closed <- 1:
+		default:
+		}
+		return nil
+	})
+	defer onOpen.Release()
+	defer onMessage.Release()
+	defer onClose.Release()
+	defer onError.Release()
+	ws.Set("onopen", onOpen)
+	ws.Set("onmessage", onMessage)
+	ws.Set("onclose", onClose)
+	ws.Set("onerror", onError)
+
+	// stdin lines -> socket
+	go func() {
+		reader := bufio.NewReader(hc.Stdin)
+		for {
+			line, err := reader.ReadString('\n')
+			if line != "" && ws.Get("readyState").Int() == 1 {
+				ws.Call("send", strings.TrimRight(line, "\n"))
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	select {
+	case code := <-closed:
+		return code
+	case <-ctx.Done():
+		ws.Call("close")
+		return 130
+	}
 }
