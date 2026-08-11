@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/0magnet/afero"
 	"github.com/0magnet/sh/v3/expand"
 	"github.com/0magnet/sh/v3/interp"
 	"github.com/0magnet/u-root/pkg/ls"
-	"github.com/0magnet/afero"
 )
 
 // applet is a built-in utility. run returns the exit code.

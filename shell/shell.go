@@ -13,10 +13,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/0magnet/afero"
 	"github.com/0magnet/sh/v3/expand"
 	"github.com/0magnet/sh/v3/interp"
 	"github.com/0magnet/sh/v3/syntax"
-	"github.com/0magnet/afero"
 )
 
 // Shell is an interpreter bound to a virtual filesystem.
