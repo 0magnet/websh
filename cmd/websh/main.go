@@ -236,12 +236,9 @@ func (s *session) run() {
 			s.editor.AddHistory(line)
 		}
 
-		// Ctrl+C cancels this context, and nothing else does: a background
-		// job started by the line holds it too, and must outlive the command
-		// line as it does in bash, where Ctrl+C reaches the foreground job
-		// only and `kill %1` is how you end the others. The parent is
-		// Background, which registers no children, so an uncancelled context
-		// is collected along with the last job holding it.
+		// Cancelling this at the end of the line is safe: the interpreter
+		// detaches background jobs from it, so `sleep 30 &` survives to the
+		// next prompt as it would in bash.
 		ctx, cancel := context.WithCancel(context.Background())
 		s.cancelRun = cancel
 		s.running = true
@@ -250,6 +247,7 @@ func (s *session) run() {
 
 		s.running = false
 		s.cancelRun = nil
+		cancel()
 
 		if err != nil {
 			msg := err.Error()
