@@ -32,8 +32,8 @@ type LineEditor struct {
 	histIdx  int    // == len(history) when editing a fresh line
 	histSave string // the fresh line stashed while browsing history
 
-	esc  int // escape state: 0 none, 1 ESC, 2 CSI
-	csi  strings.Builder
+	esc int // escape state: 0 none, 1 ESC, 2 CSI
+	csi strings.Builder
 }
 
 // Line returns the current buffer contents.
