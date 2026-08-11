@@ -183,6 +183,9 @@ func main() {
 		},
 	}
 
+	// the history builtin reads the line editor's list
+	sh.UseHistory(s.editor.History, s.editor.ClearHistory)
+
 	// full-screen applets (less) take raw input and know the size
 	sh.RawMode = func(on bool) { s.rawInput = on }
 	sh.Size = func() (int, int) { return term.Core.Cols(), term.Core.Rows() }
@@ -233,6 +236,12 @@ func (s *session) run() {
 			s.editor.AddHistory(line)
 		}
 
+		// Ctrl+C cancels this context, and nothing else does: a background
+		// job started by the line holds it too, and must outlive the command
+		// line as it does in bash, where Ctrl+C reaches the foreground job
+		// only and `kill %1` is how you end the others. The parent is
+		// Background, which registers no children, so an uncancelled context
+		// is collected along with the last job holding it.
 		ctx, cancel := context.WithCancel(context.Background())
 		s.cancelRun = cancel
 		s.running = true
@@ -241,7 +250,6 @@ func (s *session) run() {
 
 		s.running = false
 		s.cancelRun = nil
-		cancel()
 
 		if err != nil {
 			msg := err.Error()
@@ -263,4 +271,6 @@ var shellBuiltins = []string{
 	"source", "test", "true", "false", "set", "shift", "local",
 	"declare", "eval", "alias", "unalias", "type", "return", "break",
 	"continue", "pushd", "popd", "dirs", "let", "getopts", "wait",
+	"jobs", "kill", "disown", "fg", "bg", "enable", "compgen", "history",
+	"builtin", "umask", "times", "trap", "shopt", "mapfile", "readarray",
 }

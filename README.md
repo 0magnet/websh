@@ -30,6 +30,9 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 - Pipes and redirections against the virtual filesystem
 - **`awk`** ([goawk](https://github.com/benhoyt/goawk)) and **`jq`** ([gojq](https://github.com/itchyny/gojq)) — the real things, as pure-Go libraries
 - ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
+- **Bash's `help`**: `builtin help` lists every builtin with its synopsis in two columns, `builtin help cd` documents one, and a star marks the few that are recognized but not implemented (`bind caller complete compopt fc newgrp suspend ulimit`)
+- **Job control**: `sleep 30 &` then `jobs`, `kill %1`, `disown`, `fg`, `bg`. A job is a goroutine, so `kill` cancels it rather than signalling a process, and nothing is ever stopped — there is no terminal to hand a job. Job specs work as in bash: `%1`, `%+`, `%sleep`, `%?leep`
+- **`compgen`** (the completions the shell itself knows: `-a -b -c -d -e -f -k -v -W -A`), **`history`** (over the line editor's list, `-c` to clear), **`enable -n`** to turn a builtin off, **`umask`**, **`times`**
 - **A text editor**: `edit file` — full-screen, in the spirit of [skywire](https://github.com/skycoin/skywire)'s femto-based `edit` command (Ctrl+S save, Ctrl+Q quit, Ctrl+K cut)
 - **A pager**: `less`/`more` (space/b page, j/k line, g/G ends, q quits)
 - **The browser console, in the shell**: `js 'document.title'` evaluates JavaScript in the page (promises awaited, objects printed as JSON) and `logs` reads captured `console.*` output — `-f` to follow, `-e` for errors only, `-n N`, `-c` to clear. Pipe it: `logs -e -p | wc -l`
