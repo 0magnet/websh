@@ -2,7 +2,7 @@
 
 A bash-like shell running entirely in your browser — no server, no container, no emulator. WebAssembly all the way down.
 
-**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.4 MB — the default) · [standard Go build](https://0magnet.github.io/websh/go/) (12 MB)
+**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.3 MB — the default) · [standard Go build](https://0magnet.github.io/websh/go/) (12 MB)
 
 ```
 user@websh:~$ for i in $(seq 3); do echo line $i; done | grep 2
@@ -32,6 +32,7 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 - ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
 - **A text editor**: `edit file` — full-screen, in the spirit of [skywire](https://github.com/skycoin/skywire)'s femto-based `edit` command (Ctrl+S save, Ctrl+Q quit, Ctrl+K cut)
 - **A pager**: `less`/`more` (space/b page, j/k line, g/G ends, q quits)
+- **The browser console, in the shell**: `js 'document.title'` evaluates JavaScript in the page (promises awaited, objects printed as JSON) and `logs` reads captured `console.*` output — `-f` to follow, `-e` for errors only, `-n N`, `-c` to clear. Pipe it: `logs -e -p | wc -l`
 - **Browser superpowers**: `curl` (fetch, CORS applies), `nc` (WebSocket netcat), `download` (vfs file → your Downloads), `upload` (file picker → vfs), `pbcopy`/`pbpaste` (system clipboard)
 - Line editing: **tab completion** (commands and paths), history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears
 
@@ -44,11 +45,23 @@ bash in your browser: xterm-go + a Go shell interpreter + IndexedDB filesystem, 
 ## Architecture
 
 ```
-cmd/websh/   js/wasm entry: terminal wiring, prompt, IndexedDB persistence
-shell/       pure Go, natively testable (go test ./shell/):
-  shell.go     interp.Runner + afero handlers (open/stat/readdir/access/exec)
-  applets.go   the userland, written against afero
-  editor.go    readline-style line discipline (escape-seq parser, history)
+cmd/websh/       js/wasm entry: terminal wiring, prompt, IndexedDB persistence
+shell/           pure Go, natively testable (go test ./shell/):
+  shell.go         interp.Runner + afero handlers (open/stat/readdir/access/exec)
+  applets.go       the userland, written against afero
+  editor.go        readline-style line discipline (escape-seq parser, history)
+shell/browser/   js/wasm applets any embedder can turn on with browser.Register():
+  browser.go       js, download, upload, curl, nc, pbcopy, pbpaste
+  console.go       console.* capture behind `logs` (chains with a host page's
+                   own capture, and backfills from it)
+```
+
+Embedders get the browser applets by importing one package:
+
+```go
+import "github.com/0magnet/websh/shell/browser"
+
+browser.Register()   // before sh.PopulateBin(), so they appear in /bin
 ```
 
 The `shell` package has no `syscall/js` — the whole engine (interpreter, filesystem, applets, line editor) runs and is tested natively. The wasm layer is only terminal glue.
