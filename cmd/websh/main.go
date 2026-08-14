@@ -116,10 +116,10 @@ func main() {
 		s.storage = storage
 		shell.RegisterApplet("reset-fs", "wipe the persisted filesystem and reload", func(ctx context.Context, _ *shell.Shell, hc *interp.HandlerContext, args []string) int {
 			if err := storage.clear(); err != nil {
-				fmt.Fprintf(hc.Stderr, "reset-fs: %v\n", err)
+				shell.Printf(hc.Stderr, "reset-fs: %v\n", err)
 				return 1
 			}
-			fmt.Fprintln(hc.Stdout, "persisted filesystem cleared; reloading...")
+			shell.Println(hc.Stdout, "persisted filesystem cleared; reloading...")
 			js.Global().Get("location").Call("reload")
 			return 0
 		})
@@ -204,7 +204,7 @@ func main() {
 			if s.rawInput {
 				// a full-screen applet owns the terminal: raw bytes,
 				// no echo; Ctrl+C is passed through for it to handle
-				go s.stdinW.Write([]byte(data))
+				go shell.Write(s.stdinW, []byte(data))
 				return
 			}
 			// a command is reading stdin: pass input through (with
@@ -217,7 +217,7 @@ func main() {
 			}
 			echo := strings.ReplaceAll(data, "\r", "\r\n")
 			term.WriteString(echo)
-			go s.stdinW.Write([]byte(strings.ReplaceAll(data, "\r", "\n")))
+			go shell.Write(s.stdinW, []byte(strings.ReplaceAll(data, "\r", "\n")))
 			return
 		}
 		s.editor.Input(data)
@@ -245,7 +245,7 @@ func (s *session) run() {
 			s.editor.AddHistory(line)
 		}
 
-		// Cancelling this at the end of the line is safe: the interpreter
+		// Canceling this at the end of the line is safe: the interpreter
 		// detaches background jobs from it, so `sleep 30 &` survives to the
 		// next prompt as it would in bash.
 		ctx, cancel := context.WithCancel(context.Background())

@@ -198,11 +198,15 @@ func runLogs(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, arg
 		case "-n":
 			if i+1 < len(args) {
 				i++
-				limit, _ = strconv.Atoi(args[i])
+				if v, err := strconv.Atoi(args[i]); err == nil {
+					limit = v
+				}
 			}
 		default:
 			if strings.HasPrefix(args[i], "-n") {
-				limit, _ = strconv.Atoi(args[i][2:])
+				if v, err := strconv.Atoi(args[i][2:]); err == nil {
+					limit = v
+				}
 			}
 		}
 	}
@@ -210,7 +214,7 @@ func runLogs(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, arg
 		logMu.Lock()
 		logBuf = nil
 		logMu.Unlock()
-		fmt.Fprintln(hc.Stdout, "console buffer cleared")
+		shell.Println(hc.Stdout, "console buffer cleared")
 		return 0
 	}
 
@@ -232,12 +236,12 @@ func runLogs(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, arg
 		filtered = filtered[len(filtered)-limit:]
 	}
 	for _, e := range filtered {
-		fmt.Fprintln(hc.Stdout, renderLog(e, plain))
+		shell.Println(hc.Stdout, renderLog(e, plain))
 	}
 
 	if !follow {
 		if len(filtered) == 0 {
-			fmt.Fprintln(hc.Stderr, "(console buffer empty — output is captured from the moment the shell starts)")
+			shell.Println(hc.Stderr, "(console buffer empty — output is captured from the moment the shell starts)")
 		}
 		return 0
 	}
@@ -250,7 +254,7 @@ func runLogs(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, arg
 			return 130
 		case e := <-ch:
 			if keep(e) {
-				fmt.Fprintln(hc.Stdout, renderLog(e, plain))
+				shell.Println(hc.Stdout, renderLog(e, plain))
 			}
 		}
 	}

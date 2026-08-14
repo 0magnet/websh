@@ -119,22 +119,34 @@ func (s *idbStorage) loadAll(vfs afero.Fs) (int, error) {
 		return 0, err
 	}
 	n := keys.Get("length").Int()
+	// Count what was actually restored rather than what was stored: the caller
+	// seeds a fresh filesystem when this returns 0, and a store whose entries
+	// all failed to restore is no better than an empty one.
+	restored := 0
 	for i := 0; i < n; i++ {
 		path := keys.Index(i).String()
 		val := vals.Index(i)
-		mode := os.FileMode(val.Get("mode").Int())
+		mode := os.FileMode(val.Get("mode").Int() & 0o7777)
 		mtime := time.UnixMilli(int64(val.Get("mtime").Float()))
 		if val.Get("isDir").Bool() {
-			_ = vfs.MkdirAll(path, mode.Perm())
+			if err := vfs.MkdirAll(path, mode.Perm()); err != nil {
+				continue // skip an entry we cannot recreate; keep restoring the rest
+			}
+			restored++
 			continue
 		}
 		arr := val.Get("data")
 		data := make([]byte, arr.Get("length").Int())
 		js.CopyBytesToGo(data, arr)
-		_ = afero.WriteFile(vfs, path, data, mode.Perm())
-		_ = vfs.Chtimes(path, mtime, mtime)
+		if err := afero.WriteFile(vfs, path, data, mode.Perm()); err != nil {
+			continue
+		}
+		restored++
+		if err := vfs.Chtimes(path, mtime, mtime); err != nil {
+			continue // the content is restored; only its timestamp is missing
+		}
 	}
-	return n, nil
+	return restored, nil
 }
 
 // fileSig detects changes cheaply between syncs.
@@ -148,7 +160,7 @@ type fileSig struct {
 // deleted ones, and returns the new signature snapshot.
 func (s *idbStorage) syncFS(vfs afero.Fs, prev map[string]fileSig) map[string]fileSig {
 	next := make(map[string]fileSig, len(prev))
-	_ = afero.Walk(vfs, "/", func(path string, info os.FileInfo, err error) error {
+	walkErr := afero.Walk(vfs, "/", func(path string, info os.FileInfo, err error) error {
 		if err != nil || path == "/" {
 			return nil
 		}
@@ -165,12 +177,24 @@ func (s *idbStorage) syncFS(vfs afero.Fs, prev map[string]fileSig) map[string]fi
 			}
 			rec.data = data
 		}
-		_ = s.put(path, rec)
+		if err := s.put(path, rec); err != nil {
+			// Not persisted. Drop it from the snapshot so the next sync sees
+			// it as changed and tries again, rather than recording a write
+			// that never happened.
+			delete(next, path)
+		}
 		return nil
 	})
+	if walkErr != nil {
+		// The callback never returns an error, so this only fires if the walk
+		// itself fails. Keep whatever was persisted; the next sync retries.
+		return next
+	}
 	for path := range prev {
 		if _, ok := next[path]; !ok {
-			_ = s.delete(path)
+			if err := s.delete(path); err != nil {
+				next[path] = prev[path] // deletion failed: retry on the next sync
+			}
 		}
 	}
 	return next
