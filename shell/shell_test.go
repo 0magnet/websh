@@ -80,7 +80,10 @@ func TestControlFlow(t *testing.T) {
 
 func TestMultilineContinuation(t *testing.T) {
 	var out strings.Builder
-	sh, _ := New(nil, strings.NewReader(""), &out, &out)
+	sh, err := New(nil, strings.NewReader(""), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
 	more, err := sh.Run(ctx, "for i in a b; do")
 	if err != nil || !more {
@@ -202,7 +205,10 @@ func TestTree(t *testing.T) {
 
 func TestCancelSleep(t *testing.T) {
 	var out strings.Builder
-	sh, _ := New(nil, strings.NewReader(""), &out, &out)
+	sh, err := New(nil, strings.NewReader(""), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() {
@@ -221,14 +227,22 @@ func TestCancelSleep(t *testing.T) {
 
 func TestHeredoc(t *testing.T) {
 	var out strings.Builder
-	sh, _ := New(nil, strings.NewReader(""), &out, &out)
+	sh, err := New(nil, strings.NewReader(""), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := context.Background()
-	more, _ := sh.Run(ctx, "cat << EOF")
+	more, err := sh.Run(ctx, "cat << EOF")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !more {
 		t.Fatal("expected heredoc continuation")
 	}
-	sh.Run(ctx, "line one")
-	more, err := sh.Run(ctx, "EOF")
+	if _, err := sh.Run(ctx, "line one"); err != nil {
+		t.Fatal(err)
+	}
+	more, err = sh.Run(ctx, "EOF")
 	if more || err != nil {
 		t.Fatalf("heredoc end: more=%v err=%v", more, err)
 	}
@@ -411,7 +425,9 @@ func feedShell(t *testing.T, stdin string, lines ...string) (*Shell, string) {
 	}
 	ctx := context.Background()
 	for _, line := range lines {
-		sh.Run(ctx, line)
+		if _, err := sh.Run(ctx, line); err != nil {
+			t.Fatalf("run %q: %v", line, err)
+		}
 	}
 	return sh, out.String()
 }
@@ -446,8 +462,13 @@ func TestEditModify(t *testing.T) {
 	}
 	// reuse first shell's FS so the file exists
 	sh2.FS = sh.FS
-	sh2.Run(context.Background(), "edit f.txt")
-	data, _ := afero.ReadFile(sh.FS, "/home/user/f.txt")
+	if _, err := sh2.Run(context.Background(), "edit f.txt"); err != nil {
+		t.Fatal(err)
+	}
+	data, err := afero.ReadFile(sh.FS, "/home/user/f.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if string(data) != "abc!\ndef\n" {
 		t.Fatalf("content = %q", string(data))
 	}
@@ -457,7 +478,10 @@ func TestEditBackspaceDeleteNav(t *testing.T) {
 	// "abx<bs>c" -> abc ; then down, home, del removes 'd'
 	stdin := "abx\x7fc\r" + "def" + "\x1b[H" + "\x1b[3~" + "\x13\x11"
 	sh, _ := feedShell(t, stdin, "edit t.txt")
-	data, _ := afero.ReadFile(sh.FS, "/home/user/t.txt")
+	data, err := afero.ReadFile(sh.FS, "/home/user/t.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if string(data) != "abc\nef\n" {
 		t.Fatalf("content = %q", string(data))
 	}

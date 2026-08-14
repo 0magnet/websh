@@ -92,12 +92,16 @@ func main() {
 		if n, err := storage.loadAll(vfs); err == nil {
 			persisted = true
 			if n == 0 {
-				shell.Seed(vfs)
+				if err := shell.Seed(vfs); err != nil {
+					term.WriteString("failed to seed filesystem: " + err.Error() + "\r\n")
+				}
 			}
 		}
 	}
 	if !persisted {
-		shell.Seed(vfs)
+		if err := shell.Seed(vfs); err != nil {
+			term.WriteString("failed to seed filesystem: " + err.Error() + "\r\n")
+		}
 	}
 
 	sh, err := shell.New(vfs, stdinR, out, out)
@@ -121,7 +125,10 @@ func main() {
 		})
 		s.sigs = storage.syncFS(vfs, nil) // baseline snapshot (also persists the seed)
 	}
-	sh.PopulateBin() // include the browser applets (and reset-fs) in /bin
+	// include the browser applets (and reset-fs) in /bin
+	if err := sh.PopulateBin(); err != nil {
+		term.WriteString("failed to populate /bin: " + err.Error() + "\r\n")
+	}
 
 	s.editor = &shell.LineEditor{
 		Echo: func(str string) { term.WriteString(str) },
@@ -184,7 +191,9 @@ func main() {
 	}
 
 	// the history builtin reads the line editor's list
-	sh.UseHistory(s.editor.History, s.editor.ClearHistory)
+	if err := sh.UseHistory(s.editor.History, s.editor.ClearHistory); err != nil {
+		term.WriteString("history unavailable: " + err.Error() + "\r\n")
+	}
 
 	// full-screen applets (less) take raw input and know the size
 	sh.RawMode = func(on bool) { s.rawInput = on }
