@@ -8,6 +8,8 @@ github.com/0magnet/sh/v3 v3.13.2-0.20260811162646-be9e4c2c9ef1 h1:/aS3kQ9tNh/+wI
 github.com/0magnet/sh/v3 v3.13.2-0.20260811162646-be9e4c2c9ef1/go.mod h1:IdyC3iqIKArn4KOl0a58dV2spH0PH6pLJKOZYB2kFR0=
 github.com/0magnet/sh/v3 v3.13.2-0.20260811164018-2b267cc61308 h1:BCbdrVIb1GYMgqtfxh4Eb/CHydD+9/mKlwpe/8zRifE=
 github.com/0magnet/sh/v3 v3.13.2-0.20260811164018-2b267cc61308/go.mod h1:IdyC3iqIKArn4KOl0a58dV2spH0PH6pLJKOZYB2kFR0=
+github.com/0magnet/sh/v3 v3.13.2-0.20260814172914-eff537668adf h1:3tImGgrBxM3/eC13YeT8WsT5B3E3dxmHtozvgo0xtpo=
+github.com/0magnet/sh/v3 v3.13.2-0.20260814172914-eff537668adf/go.mod h1:IdyC3iqIKArn4KOl0a58dV2spH0PH6pLJKOZYB2kFR0=
 github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9 h1:akt/1o/SlArz8M/n+piy0eyKaBa83wrxQmrLgh6FlPU=
 github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9/go.mod h1:fId14v+rNp1A0ZKHJPZZyiu9dfgWKEs7nbyvKrku3bo=
 github.com/0magnet/xterm-go v0.0.0-20260810205834-539654a1b7a3 h1:E+HiftyW5JqQadAaWu9kyaMgT72Uzd7dm7yQufnFRV4=
