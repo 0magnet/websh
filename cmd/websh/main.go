@@ -75,11 +75,11 @@ func main() {
 	}
 	term.OnTitleChange = func(title string) { doc.Set("title", title) }
 
-	resize := js.FuncOf(func(js.Value, []js.Value) any {
-		term.Fit()
-		return nil
-	})
-	js.Global().Call("addEventListener", "resize", resize)
+	// Observe the container rather than the window. They are the same thing
+	// only when the terminal is the whole page; embedded in a WinBox window or
+	// a split pane it is resized by its container while the window never
+	// changes, and a window resize listener would never hear about it.
+	term.AutoFit()
 
 	out := termWriter{term}
 	stdinR, stdinW := io.Pipe()
