@@ -6,6 +6,8 @@ github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9 h1:akt/1o/SlArz8
 github.com/0magnet/u-root v0.16.1-0.20260810212217-0890fe5099f9/go.mod h1:fId14v+rNp1A0ZKHJPZZyiu9dfgWKEs7nbyvKrku3bo=
 github.com/0magnet/xterm-go v0.0.0-20260810205834-539654a1b7a3 h1:E+HiftyW5JqQadAaWu9kyaMgT72Uzd7dm7yQufnFRV4=
 github.com/0magnet/xterm-go v0.0.0-20260810205834-539654a1b7a3/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
+github.com/0magnet/xterm-go v0.0.0-20260816193539-5beca79629c0 h1:vKuI1woBzCSkJiopdq6dgKAIEH8U2oJVpMh3AAI9/zk=
+github.com/0magnet/xterm-go v0.0.0-20260816193539-5beca79629c0/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.31.0 h1:TSdLys1rAWvmb3befdmLYpaHZbTrYtS+JkBWRcNsMNM=
 github.com/benhoyt/goawk v1.31.0/go.mod h1:jXTQxBxtQ0VsjFqc8dw7tIJj3SDzQN8kcdMq7r83/ZA=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
