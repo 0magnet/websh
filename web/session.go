@@ -164,7 +164,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	return s, nil
 }
 
-// Prompt is the current prompt string, colours and all.
+// Prompt is the current prompt string, colors and all.
 func (s *Session) Prompt() string {
 	if s.Shell.Pending() {
 		return "\x1b[1;33m>\x1b[0m "
