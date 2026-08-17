@@ -164,6 +164,28 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	return s, nil
 }
 
+// Submit runs a line as though it had been typed at the prompt: it is echoed
+// where the typing would have appeared, remembered in the history, and run.
+//
+// It is what a link into a page needs — "open this and run that" — and the
+// echo is the point rather than a side effect. A command that arrives from a
+// URL should be visible in the scrollback, so that what ran is on the screen
+// and not only in the address bar.
+//
+// The send is on its own goroutine because the line channel is small and the
+// run loop may be busy; blocking here would block whatever called it, which on
+// this platform is usually the browser's event loop.
+func (s *Session) Submit(line string) {
+	if s.closed || line == "" {
+		return
+	}
+	s.Term.WriteString(line + "\r\n")
+	go func() {
+		defer func() { _ = recover() }() // a send on a closed session
+		s.lines <- line
+	}()
+}
+
 // Prompt is the current prompt string, colors and all.
 func (s *Session) Prompt() string {
 	if s.Shell.Pending() {
