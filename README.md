@@ -88,3 +88,37 @@ Both toolchains are supported and both are deployed ([TinyGo](https://0magnet.gi
 ## License
 
 MIT (websh). The forks retain their upstream licenses: sh (BSD-3-Clause), u-root (BSD-3-Clause), afero (Apache-2.0), xterm-go (MIT).
+## Dependency Graph
+
+Made with [goda](https://github.com/loov/goda):
+
+```
+# GOOS=js: the import edges of a wasm program live in js/wasm-tagged
+# files and are invisible to a host-context run
+GOOS=js GOARCH=wasm go run github.com/loov/goda@latest graph github.com/0magnet/websh/... | dot -Tsvg -o docs/websh-goda-graph.svg
+```
+
+![Dependency Graph](docs/websh-goda-graph.svg "github.com/0magnet/websh Dependency Graph")
+
+## Lines of Code
+
+Made with [gocloc](https://github.com/hhatto/gocloc) (excludes `vendor/`, `node_modules/`, `.git/`):
+
+```
+gocloc --not-match-d='(vendor|node_modules|\.git)' .
+```
+
+```
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+Go                              17            309            744           3245
+JavaScript                       2            117             82            935
+HTML                             2              0              0             70
+YAML                             1              0              9             69
+Markdown                         1             25              0             65
+JSON                             2              0              0             28
+-------------------------------------------------------------------------------
+TOTAL                           25            451            835           4412
+-------------------------------------------------------------------------------
+```
