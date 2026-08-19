@@ -181,7 +181,8 @@ func (s *Session) Submit(line string) {
 	}
 	s.Term.WriteString(line + "\r\n")
 	go func() {
-		defer func() { _ = recover() }() // a send on a closed session
+		// A send on a closed session panics; there is nobody left to tell.
+		defer func() { _ = recover() }() //nolint:errcheck
 		s.lines <- line
 	}()
 }
@@ -268,7 +269,7 @@ func (s *Session) run() {
 			s.Editor.AddHistory(line)
 		}
 
-		// Cancelling at the end of the line is safe: the interpreter detaches
+		// Canceling at the end of the line is safe: the interpreter detaches
 		// background jobs from this context, so `sleep 30 &` survives to the
 		// next prompt as it would in bash.
 		ctx, cancel := context.WithCancel(context.Background())
@@ -299,7 +300,8 @@ func (s *Session) Close() {
 	}
 	s.closed = true
 	if s.stdinW != nil {
-		s.stdinW.Close() //nolint:errcheck
+		// The session is going away; a failed close has no reader to report to.
+		s.stdinW.Close() //nolint:errcheck,gosec
 	}
 	close(s.lines)
 	if s.Term != nil {
