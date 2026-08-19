@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help format tidy lint vet test check install-linters docs
+.PHONY: help format tidy lint vet test test-wasm cover check install-linters docs
 
 # The targets that matter are `format` and `check`, and they mean the same
 # thing here as in 0pcom/skywire, which is the reference for these repos.
@@ -73,11 +73,34 @@ vet: ## Run go vet
 		CGO_ENABLED=0 GOOS=js GOARCH=wasm ${OPTS} go vet $(JSPKGS); \
 	fi
 
-test: ## Run tests
+test: ## Run tests. Falls back to the js/wasm ones where nothing builds here
 	@if [ -n "$(PKGS)" ]; then \
 		${OPTS} go test $(PKGS); \
 	else \
-		echo 'nothing builds for this host; no tests to run'; \
+		echo '--- nothing builds for this host; running the js/wasm tests instead'; \
+		$(MAKE) --no-print-directory test-wasm; \
+	fi
+
+# The exec wrapper Go ships for running a js/wasm binary under Node. It is what
+# makes `go test` work for code the host cannot build at all.
+WASMEXEC = $(shell go env GOROOT)/lib/wasm/go_js_wasm_exec
+
+test-wasm: ## Run the js/wasm tests under Node
+	@if [ ! -x "$(WASMEXEC)" ]; then \
+		echo 'no js/wasm exec wrapper in this Go installation; skipping'; exit 0; fi
+	@command -v node >/dev/null || { echo 'node is not installed; skipping'; exit 0; }
+	@# Node has no DOM: document, window and requestAnimationFrame are all
+	@# undefined. JS core is there, and a fake document can be installed from
+	@# Go with js.Global().Set, which is how the DOM-facing code is covered.
+	@if [ -n "$(JSPKGS)" ]; then \
+		CGO_ENABLED=0 GOOS=js GOARCH=wasm ${OPTS} go test -exec="$(WASMEXEC)" $(JSPKGS); \
+	else \
+		echo 'no js/wasm packages'; \
+	fi
+
+cover: ## Report test coverage per package
+	@if [ -n "$(PKGS)" ]; then \
+		CGO_ENABLED=$(CGO) ${OPTS} go test -cover $(PKGS) 2>&1 | grep -v '^ok.*no test files'; \
 	fi
 
 check: lint vet test ## Run linters, vet and tests
