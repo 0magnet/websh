@@ -94,6 +94,11 @@ func joinArgs(args []js.Value) string {
 // installConsoleCapture wraps console.* and the window error events once.
 func installConsoleCapture() {
 	installOnce.Do(func() {
+		// Escape hatch while debugging pages that die inside console writes:
+		// with __webshNoCapture set, the console is left untouched.
+		if js.Global().Get("__webshNoCapture").Truthy() {
+			return
+		}
 		console := js.Global().Get("console")
 		if !console.Truthy() {
 			return
