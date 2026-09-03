@@ -247,6 +247,19 @@ func (s *Shell) execHandler(next interp.ExecHandlerFunc) interp.ExecHandlerFunc 
 			}
 			return nil
 		}
+		// Not a built-in applet: try to exec it as a program on the
+		// filesystem. On js/wasm this spawns a wasm binary as a child process
+		// via bottle's proc layer (see exec_js.go); elsewhere it is a no-op and
+		// falls through to "command not found".
+		if code, handled := s.execExternal(ctx, args); handled {
+			if code < 0 || code > 255 {
+				code = 1
+			}
+			if code != 0 {
+				return interp.ExitStatus(code)
+			}
+			return nil
+		}
 		fprintf(interp.HandlerCtx(ctx).Stderr, "websh: %s: command not found\n", args[0])
 		return interp.ExitStatus(127)
 	}
