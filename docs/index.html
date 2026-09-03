@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>websh — bash in your browser</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; }
+  header {
+    color: #d3d7cf; font-family: monospace; padding: 8px 12px;
+    background: #111; border-bottom: 1px solid #2e3436;
+  }
+  header a { color: #729fcf; }
+  #terminal { position: absolute; top: 41px; bottom: 0; left: 0; right: 0; }
+</style>
+</head>
+<body>
+<header>
+  <b>websh</b> — a bash-like shell in WebAssembly ·
+  <a href="https://github.com/0magnet/websh">websh</a> =
+  <a href="https://github.com/0magnet/xterm-go">xterm-go</a> +
+  <a href="https://github.com/0magnet/sh">sh</a> +
+  <a href="https://github.com/0magnet/u-root">u-root</a> +
+  <a href="https://github.com/0magnet/afero">afero</a>
+  &nbsp;·&nbsp; TinyGo build (3.4 MB) — <a href="go/">standard Go build</a>
+</header>
+<div id="terminal"></div>
+<script src="wasm_exec.js"></script>
+<script>
+  const go = new Go();
+  WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+    .then((result) => go.run(result.instance));
+</script>
+</body>
+</html>
