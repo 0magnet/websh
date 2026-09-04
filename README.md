@@ -2,7 +2,9 @@
 
 A bash-like shell running entirely in your browser — no server, no container, no emulator. WebAssembly all the way down.
 
-**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.3 MB — the default) · [standard Go build](https://0magnet.github.io/websh/go/) (12 MB)
+**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.3 MB — the default) · **[standard Go build](https://0magnet.github.io/websh/go/)** (12 MB)
+
+![websh in the browser](docs/websh-demo.png "ls -la / against the IndexedDB-backed filesystem, in a wasm shell")
 
 ```
 user@websh:~$ for i in $(seq 3); do echo line $i; done | grep 2
