@@ -175,6 +175,10 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 
 	s.Term.Core.OnData = s.onData
 
+	// Publish the shell -> session pairing, so a full-screen applet can find
+	// the terminal it is running in. See sessionfor.go.
+	registerSession(s)
+
 	go s.run()
 
 	if opt.Greeting != "" {
@@ -319,6 +323,7 @@ func (s *Session) Close() {
 		return
 	}
 	s.closed = true
+	forgetSession(s)
 	if s.stdinW != nil {
 		// The session is going away; a failed close has no reader to report to.
 		s.stdinW.Close() //nolint:errcheck,gosec
