@@ -2,7 +2,7 @@
 
 A bash-like shell running entirely in your browser — no server, no container, no emulator. WebAssembly all the way down.
 
-**[Live demo](https://0magnet.github.io/websh/)** (TinyGo build, 3.3 MB — the default) · **[standard Go build](https://0magnet.github.io/websh/go/)** (12 MB)
+**[Live demo](https://websh.magnetosphere.net/)** (TinyGo build, 3.3 MB — the default) · **[standard Go build](https://websh.magnetosphere.net/go/)** (12 MB)
 
 ![websh in the browser](docs/websh-demo.png "ls -la / against the IndexedDB-backed filesystem, in a wasm shell")
 
@@ -80,7 +80,7 @@ tinygo build -target wasm -no-debug -o docs/main.wasm ./cmd/websh
 GOOS=js GOARCH=wasm go build -o docs/go/main.wasm ./cmd/websh
 ```
 
-Both toolchains are supported and both are deployed ([TinyGo](https://0magnet.github.io/websh/), [standard Go](https://0magnet.github.io/websh/go/)); the forks carry the TinyGo compatibility shims. Use the matching `wasm_exec.js` for whichever compiled the binary.
+Both toolchains are supported and both are deployed ([TinyGo](https://websh.magnetosphere.net/), [standard Go](https://websh.magnetosphere.net/go/)); the forks carry the TinyGo compatibility shims. Use the matching `wasm_exec.js` for whichever compiled the binary.
 
 ## Roadmap
 
