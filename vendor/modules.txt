@@ -14,7 +14,7 @@ github.com/0magnet/sh/v3/syntax
 # github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b
 ## explicit; go 1.25.7
 github.com/0magnet/u-root/pkg/ls
-# github.com/0magnet/xterm-go v0.0.0-20260909230905-494f3085d6ed
+# github.com/0magnet/xterm-go v0.0.0-20260910002153-8f449d30e0f4
 ## explicit; go 1.24
 github.com/0magnet/xterm-go
 github.com/0magnet/xterm-go/vt
