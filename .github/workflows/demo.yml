@@ -1,0 +1,74 @@
+name: demo
+
+# Build the browser demo and commit it to docs/, which is what GitHub Pages
+# serves (this repo is configured main:/docs, legacy build — there is no Pages
+# action in the chain, so the committed wasm IS the site).
+#
+# It was build.sh run by hand before this, which meant the demo carried whatever
+# the last machine to run it produced. A dependency fix reached the site only if
+# somebody remembered, and one that shipped a real bug — a WebGL canvas sized
+# taller than the terminal it sat on — stayed live across five demos for weeks
+# for exactly that reason.
+on:
+  push:
+    branches: [main]
+    # Only when something that changes the binary changes. docs/ is excluded so
+    # this cannot answer its own commit.
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'build.sh'
+      - '.github/workflows/demo.yml'
+  workflow_dispatch:
+
+concurrency:
+  # A second push while this runs would race to commit docs/. Newer wins.
+  group: demo-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Go is pinned rather than taken from the runner. TinyGo 0.42 declares
+      # support through Go 1.27 but does not build against it: Go 1.27's
+      # internal/runtime/maps reaches for abi.MapType and abi.MapGroupSlots,
+      # which TinyGo's own reduced internal/abi does not define, and TinyGo
+      # does not override internal/runtime/maps — so the build dies inside Go's
+      # own source. Pinning is what keeps this reproducible.
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.5'
+          cache: false
+
+      - uses: acifani/setup-tinygo@v3
+        with:
+          tinygo-version: '0.42.0'
+
+      - name: build the demo into docs/
+        run: sh build.sh
+
+      - name: commit docs/ if it changed
+        run: |
+          set -eu
+          if git diff --quiet -- docs; then
+            echo "docs/ unchanged; nothing to publish"
+            exit 0
+          fi
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs
+          # The marker below stops this build product from starting the whole
+          # workflow set again for a tree whose source did not change.
+          #
+          # BEWARE writing that marker into a commit message that is not this
+          # one: GitHub scans the whole message BODY for it, so a commit that
+          # merely mentions it in prose silently skips every workflow.
+          git commit -m 'docs: rebuild the browser demo [skip ci]'
+          git push
