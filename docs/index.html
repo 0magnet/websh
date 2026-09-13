@@ -4,12 +4,39 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>websh — bash in your browser</title>
+<!-- seo:begin -->
+<meta name="description" content="A bash-like shell running entirely in your browser — pipes, redirection, globbing, job control and a filesystem that survives reloads. WebAssembly all the way down: no server, no container, no emulator.">
+<meta name="author" content="0magnet">
+<link rel="canonical" href="https://websh.magnetosphere.net/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="magnetosphere">
+<meta property="og:title" content="websh — a bash-like shell running in your browser">
+<meta property="og:description" content="A bash-like shell running entirely in your browser — pipes, redirection, globbing, job control and a filesystem that survives reloads. WebAssembly all the way down: no server, no container, no emulator.">
+<meta property="og:url" content="https://websh.magnetosphere.net/">
+<meta property="og:image" content="https://websh.magnetosphere.net/websh-demo.png">
+<meta property="og:image:alt" content="ls -la against an IndexedDB-backed filesystem, running in a wasm shell">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="websh — a bash-like shell running in your browser">
+<meta name="twitter:description" content="A bash-like shell running entirely in your browser — pipes, redirection, globbing, job control and a filesystem that survives reloads. WebAssembly all the way down: no server, no container, no emulator.">
+<meta name="twitter:image" content="https://websh.magnetosphere.net/websh-demo.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","applicationCategory":"DeveloperApplication","author":{"@type":"Person","name":"0magnet"},"browserRequirements":"Requires WebAssembly","description":"A bash-like shell running entirely in your browser — pipes, redirection, globbing, job control and a filesystem that survives reloads. WebAssembly all the way down: no server, no container, no emulator.","image":"https://websh.magnetosphere.net/websh-demo.png","isAccessibleForFree":true,"name":"websh — a bash-like shell running in your browser","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"operatingSystem":"Any (modern web browser)","sameAs":"https://github.com/0magnet/websh","url":"https://websh.magnetosphere.net/"}
+</script>
+<!-- seo:end -->
 <style>
   html, body { margin: 0; height: 100%; background: #000; }
   #terminal { position: absolute; top: 41px; bottom: 0; left: 0; right: 0; }
 </style>
 </head>
 <body>
+<!-- seo:begin -->
+<div style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">
+<h1>websh — bash in your browser</h1>
+<p>A POSIX-style command shell compiled to WebAssembly and running in the page. Pipelines, redirection, globbing, loops, variables and command substitution all work, against an in-browser filesystem backed by IndexedDB — files you create survive a page reload.</p>
+<p>Nothing is emulated and nothing is proxied: there is no container, no virtual machine and no server executing your commands. The shell and its builtins are Go compiled to wasm, running in the same tab you typed them into.</p>
+<p>Source code: <a href="https://github.com/0magnet/websh">github.com/0magnet/websh</a>. More Go and WebAssembly projects: <a href="https://magnetosphere.net/software">magnetosphere.net/software</a>.</p>
+</div>
+<!-- seo:end -->
 <div id="terminal"></div>
 <script src="jsfs.js"></script>
 <script src="vnet.js"></script>
