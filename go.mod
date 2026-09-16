@@ -6,8 +6,8 @@ require (
 	github.com/0magnet/afero v1.15.1-0.20260816202415-9f9d46a34dcd
 	github.com/0magnet/sh/v3 v3.13.2-0.20260818190530-13d0024da85c
 	github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b
-	github.com/0magnet/xterm-go v0.0.0-20260913215439-50280f9bd203
-	github.com/benhoyt/goawk v1.31.0
+	github.com/0magnet/xterm-go v0.0.0-20260915170035-1ea079f51d60
+	github.com/benhoyt/goawk v1.32.0
 	github.com/itchyny/gojq v0.12.19
 )
 
