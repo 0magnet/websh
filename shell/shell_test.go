@@ -502,3 +502,59 @@ func TestLessPager(t *testing.T) {
 		t.Fatalf("page down did not render next page")
 	}
 }
+
+// Exited survives the reset that Run does immediately after it.
+//
+// The runner clears the flag the moment it is reset, and Run resets so
+// the shell stays usable — so a caller asking the runner afterwards was
+// always told no, and `exit` could not be acted on from outside at all.
+func TestExitedIsReportedAndTheShellStaysUsable(t *testing.T) {
+	var out strings.Builder
+	sh, err := New(nil, strings.NewReader(""), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	if _, err := sh.Run(ctx, "echo before"); err != nil {
+		t.Fatal(err)
+	}
+	if sh.Exited() {
+		t.Error("an ordinary command reported an exit")
+	}
+
+	if _, err := sh.Run(ctx, "exit"); err != nil && !strings.Contains(err.Error(), "exit status") {
+		t.Fatal(err)
+	}
+	if !sh.Exited() {
+		t.Error("exit was not reported")
+	}
+
+	// Still usable: the embedder may choose to carry on, and the older
+	// behavior — no OnExit, prompt comes back — depends on it.
+	if _, err := sh.Run(ctx, "echo after"); err != nil {
+		t.Fatal(err)
+	}
+	if sh.Exited() {
+		t.Error("the exit was still being reported a command later")
+	}
+	if got := out.String(); got != "before\nafter\n" {
+		t.Errorf("output %q, want both lines", got)
+	}
+}
+
+// An exit status of its own is not an exiting shell.
+func TestFailingCommandIsNotAnExit(t *testing.T) {
+	var out strings.Builder
+	sh, err := New(nil, strings.NewReader(""), &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sh.Run(context.Background(), "false"); err != nil &&
+		!strings.Contains(err.Error(), "exit status") {
+		t.Fatal(err)
+	}
+	if sh.Exited() {
+		t.Error("a non-zero status was reported as an exiting shell")
+	}
+}

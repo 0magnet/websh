@@ -372,7 +372,7 @@ func (s *Session) run() {
 		}
 		// Checked here and nowhere else: the interpreter overwrites this at
 		// every Run, so it means the line just finished and not the shell.
-		if s.onExit != nil && s.Shell.Runner.Exited() {
+		if s.onExit != nil && s.Shell.Exited() {
 			s.onExit()
 			return
 		}
