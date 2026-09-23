@@ -86,6 +86,13 @@ type Options struct {
 	// knows in scope. It may be full-screen — the terminal is right here, and
 	// Session sets RawMode and Size on the shell for exactly that.
 	//
+	//
+	// The context carries the shell that dispatched the command, so a
+	// full-screen one can find the terminal it was typed into:
+	// web.SessionForContext(ctx). A page can hold several terminals, and an
+	// embedder that instead remembers the one it built will draw on the wrong
+	// one as soon as it does.
+	//
 	// Report handled false for a command you do not recognize and the shell
 	// carries on as though the hook were not set.
 	Exec func(ctx context.Context, args []string) (code int, handled bool)
