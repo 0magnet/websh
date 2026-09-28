@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 // TestReportJobs drives a shell the way the session loop does: a line, then
@@ -45,19 +46,25 @@ func TestReportJobs(t *testing.T) {
 		t.Fatalf("status after the report = %q, want \"1\\n\"", got)
 	}
 
-	// A finished job is announced, and announced only once.
+	// A finished job is announced, and announced only once. Not waited for
+	// first: waiting reaps the job itself, so there would be nothing left to
+	// announce — which is also what bash does.
 	run("sleep 0 &")
-	run("wait")
-	if got := report(); !strings.Contains(got, "Done") {
-		t.Fatalf("first report = %q, want a Done line", got)
+	var first string
+	for range 400 {
+		if first = report(); first != "" {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !strings.Contains(first, "Done") {
+		t.Fatalf("first report = %q, want a Done line", first)
 	}
 	if got := report(); got != "" {
 		t.Fatalf("second report = %q, want nothing", got)
 	}
 
-	// A job still running is not announced. In its own shell: with the
-	// version of sh pinned here the finished job above is still in the
-	// table, so this one would be [2] and `kill %1` would name a corpse.
+	// A job still running is not announced, and reaping does not touch it.
 	var out2 strings.Builder
 	sh2, err := New(nil, strings.NewReader(""), &out2, &out2)
 	if err != nil {
@@ -72,4 +79,16 @@ func TestReportJobs(t *testing.T) {
 		t.Fatalf("report while a job runs = %q", got)
 	}
 	_, _ = sh2.Run(ctx, "kill %1; wait") //nolint:errcheck,gosec // cleanup
+
+	// Now that the interpreter reaps, a job that has been reported is gone
+	// and the numbering starts again from one.
+	run("sleep 0 &")
+	run("wait")
+	if got := run("jobs"); got != "" {
+		t.Fatalf("a job waited for was still listed: %q", got)
+	}
+	if got := run("sleep 30 & jobs"); !strings.Contains(got, "[1]") {
+		t.Fatalf("numbering after reaping = %q", got)
+	}
+	run("kill %1; wait")
 }

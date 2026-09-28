@@ -220,11 +220,9 @@ const reportJobsSrc = "__websh_exit_status=$?; jobs -n; (exit $__websh_exit_stat
 // call, the way bash does before drawing a prompt. Without it a job that ended
 // is never mentioned at all: nothing in the interpreter reports a job unasked.
 //
-// It is also meant to be what keeps the job table bounded, since the
-// interpreter drops a finished job once something has reported it. The version
-// of github.com/0magnet/sh pinned here does not reap yet, so for now a long
-// session still accumulates finished jobs; the announcements are correct
-// either way.
+// It is also what keeps the job table bounded, since the interpreter drops a
+// finished job once something has reported it. A session that never called
+// this would accumulate every job it ever backgrounded.
 func (s *Shell) ReportJobs(ctx context.Context) {
 	if s.reportJobs == nil {
 		file, err := s.parser.Parse(strings.NewReader(reportJobsSrc), "websh")
