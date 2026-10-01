@@ -14,7 +14,7 @@ github.com/0magnet/sh/v3/syntax
 # github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b
 ## explicit; go 1.25.7
 github.com/0magnet/u-root/pkg/ls
-# github.com/0magnet/xterm-go v0.0.0-20260923132223-00c1a8e687cc
+# github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a
 ## explicit; go 1.24
 github.com/0magnet/xterm-go
 github.com/0magnet/xterm-go/vt
@@ -32,7 +32,7 @@ github.com/dustin/go-humanize
 # github.com/itchyny/gojq v0.12.19
 ## explicit; go 1.24.0
 github.com/itchyny/gojq
-# github.com/itchyny/timefmt-go v0.1.8
+# github.com/itchyny/timefmt-go v0.1.9
 ## explicit; go 1.24
 github.com/itchyny/timefmt-go
 # golang.org/x/sys v0.48.0
