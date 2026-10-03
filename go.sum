@@ -1,9 +1,9 @@
-github.com/0magnet/afero v1.15.1-0.20260816202415-9f9d46a34dcd h1:zhADHH+Lu7o4U14ATjhRP9m1hhJ2BBuCtQLUmVmYg2g=
-github.com/0magnet/afero v1.15.1-0.20260816202415-9f9d46a34dcd/go.mod h1:JsJ3c6VwVpJOB3qUpT6YzgJ8yC+nBLUCcH2nhGLC6fA=
-github.com/0magnet/sh/v3 v3.13.2-0.20260928172341-4c52a7abff02 h1:N3EWOkb1IMPiZqZ0PMDWEPciTB09hZ00njS+N9xswoM=
-github.com/0magnet/sh/v3 v3.13.2-0.20260928172341-4c52a7abff02/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
-github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b h1:1p4E2ok/rmNJU2LsGx6iMl0bIAMgl1QOC2H8doC+9ww=
-github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b/go.mod h1:fId14v+rNp1A0ZKHJPZZyiu9dfgWKEs7nbyvKrku3bo=
+github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992 h1:pZAOYtc0bq6O2bND5d/QRt9k1rctn24XrEJocleRqAw=
+github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992/go.mod h1:NSftFi+9304TBnW2Le6Vd3q19YrVL3CbErMOMDmPxmU=
+github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a h1:5isxV/TvXxWoR+ELZ7HQB7R3ppWcD5tCtrTNdS3wLns=
+github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
+github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7yqiOHvv3oD89sc+YC1dAw4zw1o48mQ=
+github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754/go.mod h1:9N1kqBjNdAUT/pfrWKyty4zS5ZQgG1OvsTmhdcpAWB0=
 github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a h1:0vZOcOJSwaX7QPrKl+4J17gBxbSks3NJxcqPTzqP3yM=
 github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.32.0 h1:CK/mnBxGsNqX8hdghPIctl2aGIcwfnhT6sv+9M/bY7w=

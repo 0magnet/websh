@@ -1,18 +1,19 @@
-# github.com/0magnet/afero v1.15.1-0.20260816202415-9f9d46a34dcd
-## explicit; go 1.25.0
+# github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
+## explicit; go 1.26.0
 github.com/0magnet/afero
 github.com/0magnet/afero/internal/common
 github.com/0magnet/afero/mem
-# github.com/0magnet/sh/v3 v3.13.2-0.20260928172341-4c52a7abff02
+# github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a
 ## explicit; go 1.26.0
 github.com/0magnet/sh/v3/expand
 github.com/0magnet/sh/v3/fileutil
 github.com/0magnet/sh/v3/internal
+github.com/0magnet/sh/v3/internal/arithm
 github.com/0magnet/sh/v3/interp
 github.com/0magnet/sh/v3/pattern
 github.com/0magnet/sh/v3/syntax
-# github.com/0magnet/u-root v0.16.1-0.20260814161052-156e0b67262b
-## explicit; go 1.25.7
+# github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
+## explicit; go 1.26.6
 github.com/0magnet/u-root/pkg/ls
 # github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a
 ## explicit; go 1.24
