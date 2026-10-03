@@ -4,8 +4,8 @@ github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a h1:5isxV/TvXxWoR+
 github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7yqiOHvv3oD89sc+YC1dAw4zw1o48mQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754/go.mod h1:9N1kqBjNdAUT/pfrWKyty4zS5ZQgG1OvsTmhdcpAWB0=
-github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a h1:0vZOcOJSwaX7QPrKl+4J17gBxbSks3NJxcqPTzqP3yM=
-github.com/0magnet/xterm-go v0.0.0-20260930222525-d3033e9b370a/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
+github.com/0magnet/xterm-go v0.0.0 h1:VVjmRT/uhf9C5ADnuH4t2c40tedJ3AjOCx84YjDagDg=
+github.com/0magnet/xterm-go v0.0.0/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.32.0 h1:CK/mnBxGsNqX8hdghPIctl2aGIcwfnhT6sv+9M/bY7w=
 github.com/benhoyt/goawk v1.32.0/go.mod h1:jXTQxBxtQ0VsjFqc8dw7tIJj3SDzQN8kcdMq7r83/ZA=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
