@@ -4,8 +4,8 @@ github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a h1:5isxV/TvXxWoR+
 github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7yqiOHvv3oD89sc+YC1dAw4zw1o48mQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754/go.mod h1:9N1kqBjNdAUT/pfrWKyty4zS5ZQgG1OvsTmhdcpAWB0=
-github.com/0magnet/wisp v0.0.0-20261004020451-d16b9de8e6f4 h1:8XXDpFd+phM+vs31suSSPr4anY7hcALDyrFUj9lk1VU=
-github.com/0magnet/wisp v0.0.0-20261004020451-d16b9de8e6f4/go.mod h1:VlWT38whxJzsl6go+KXdj3lCa4uMAhaul40wHUnYg/Y=
+github.com/0magnet/wisp v0.0.0-20261004183505-1f6045fd0359 h1:c4fptfIFa6DrRx0nCROAFLTrt1ABsY5Z2fB2sU6Eroo=
+github.com/0magnet/wisp v0.0.0-20261004183505-1f6045fd0359/go.mod h1:VlWT38whxJzsl6go+KXdj3lCa4uMAhaul40wHUnYg/Y=
 github.com/0magnet/xterm-go v0.0.1-0.20261004020305-36b45f096b30 h1:ia7DsHkHyPfAELdvIp9E7TTq1zYrhPMN8LDxh+sJ07Q=
 github.com/0magnet/xterm-go v0.0.1-0.20261004020305-36b45f096b30/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.32.0 h1:CK/mnBxGsNqX8hdghPIctl2aGIcwfnhT6sv+9M/bY7w=
