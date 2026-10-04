@@ -90,6 +90,16 @@ Both toolchains are supported and both are deployed ([TinyGo](https://websh.magn
 ## License
 
 MIT (websh). The forks retain their upstream licenses: sh (BSD-3-Clause), u-root (BSD-3-Clause), afero (Apache-2.0), xterm-go (MIT).
+
+## Related projects
+
+Other shells and Unix environments that run in the browser:
+
+- [Shiro](https://shiro.computer/show) — a Unix environment in a single HTML file, with a bash-like interpreter and IndexedDB persistence
+- [wasi-sh](https://github.com/alganet/wasi-sh) — busybox ash and coreutils on wasm32-wasi, in the browser and Node
+- [Wanix](https://wanix.dev/) — WebAssembly-native Unix sandboxing with Plan 9-style namespaces
+- [BrowserPod](https://labs.leaningtech.com/blog/browserpod-20) — in-browser WebAssembly sandboxes running bash, git, Node and Python
+
 ## Dependency Graph
 
 Made with [goda](https://github.com/loov/goda):
