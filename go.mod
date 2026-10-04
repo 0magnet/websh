@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
-	github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a
+	github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/wisp v0.0.0-20261004183505-1f6045fd0359
 	github.com/0magnet/xterm-go v0.0.1-0.20261004020305-36b45f096b30

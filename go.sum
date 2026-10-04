@@ -1,7 +1,7 @@
 github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992 h1:pZAOYtc0bq6O2bND5d/QRt9k1rctn24XrEJocleRqAw=
 github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992/go.mod h1:NSftFi+9304TBnW2Le6Vd3q19YrVL3CbErMOMDmPxmU=
-github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a h1:5isxV/TvXxWoR+ELZ7HQB7R3ppWcD5tCtrTNdS3wLns=
-github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
+github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5 h1:phE5/F4rBgh+VE51tU7Y6ZusHkQnECwIBBZHQJf7S5M=
+github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7yqiOHvv3oD89sc+YC1dAw4zw1o48mQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754/go.mod h1:9N1kqBjNdAUT/pfrWKyty4zS5ZQgG1OvsTmhdcpAWB0=
 github.com/0magnet/wisp v0.0.0-20261004183505-1f6045fd0359 h1:c4fptfIFa6DrRx0nCROAFLTrt1ABsY5Z2fB2sU6Eroo=
