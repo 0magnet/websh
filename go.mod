@@ -7,7 +7,7 @@ require (
 	github.com/0magnet/sh/v3 v3.13.2-0.20261003215414-58d567267b7a
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/wisp v0.0.0-20261004020451-d16b9de8e6f4
-	github.com/0magnet/xterm-go v0.0.0
+	github.com/0magnet/xterm-go v0.0.1-0.20261004020305-36b45f096b30
 	github.com/benhoyt/goawk v1.32.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/unixshells/mosh-go v0.5.2
