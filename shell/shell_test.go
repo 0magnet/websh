@@ -558,3 +558,17 @@ func TestFailingCommandIsNotAnExit(t *testing.T) {
 		t.Error("a non-zero status was reported as an exiting shell")
 	}
 }
+
+func TestHeadTailCountForms(t *testing.T) {
+	for line, want := range map[string]string{
+		"seq 5 | head -2":   "1\n2\n",
+		"seq 5 | head -n2":  "1\n2\n",
+		"seq 5 | head -n 2": "1\n2\n",
+		"seq 5 | tail -2":   "4\n5\n",
+		"seq 5 | tail -n1":  "5\n",
+	} {
+		if got := run(t, line); got != want {
+			t.Errorf("%s = %q, want %q", line, got, want)
+		}
+	}
+}
