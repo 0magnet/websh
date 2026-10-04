@@ -76,7 +76,7 @@ user@websh:~$ mosh --port 60001 --key 4NeCCgvZFe2RnPgrcU1PQw remote.example.net
 user@websh:~$ mosh remote.example.net MOSH CONNECT 60001 4NeCCgvZFe2RnPgrcU1PQw   # or paste the line
 ```
 
-`--wisp URL` overrides `$WISP_URL`, and `$MOSH_KEY` stands in for `--key`. The host is resolved and reached by the Wisp server, not by the browser. Ctrl-^ then `.` quits. `mosh` is in the standard Go build only (`/go/`): mosh-go's terminal model needs `hash/maphash`, which TinyGo 0.42 cannot compile against Go 1.27, and against Go 1.26 it works but makes the TinyGo build some ten times slower.
+`--wisp URL` overrides `$WISP_URL`, and `$MOSH_KEY` stands in for `--key`. The host is resolved and reached by the Wisp server, not by the browser. Ctrl-^ then `.` quits. `mosh` is in the standard Go build only (`/go/`): mosh-go's terminal model needs `hash/maphash`, which TinyGo 0.42 cannot compile against Go 1.27, and against Go 1.26 it builds, but some ten times slower: go-runewidth's init writes into a 2 MB per-rune table, which stock TinyGo's compile-time interpreter serializes in quadratic time (fixed in the [0magnet/tinygo](https://github.com/0magnet/tinygo) fork, not yet upstream).
 
 ## Architecture
 
