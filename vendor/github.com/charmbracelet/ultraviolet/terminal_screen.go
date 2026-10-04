@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/ansi"
@@ -29,12 +30,24 @@ type TerminalScreen struct {
 	keyboardEnhancements *KeyboardEnhancements
 	bracketedPaste       bool
 	mouseMode            MouseMode
+	mouseEncoding        MouseEncoding
 	cursor               *Cursor // initial state is cursor hidden
 	backgroundColor      color.Color
 	foregroundColor      color.Color
 	progressBar          *ProgressBar
 	windowTitle          string
 	syncUpdates          bool // mode 2026
+	resetTabs            bool // DECST8C - reset terminal tabs on start
+
+	// mu serializes access to the render buffer, output buffer, and
+	// width-method state so the terminal event loop (which negotiates
+	// grapheme-cluster width) cannot race with the application's own
+	// Render/Flush goroutine.
+	mu sync.Mutex
+	// widthMethodOverride is set when the application explicitly calls
+	// [TerminalScreen.SetWidthMethod]. An explicit override suppresses the
+	// automatic mode-2027 width-method negotiation.
+	widthMethodOverride bool
 }
 
 var _ Screen = (*TerminalScreen)(nil)
@@ -43,7 +56,7 @@ var _ Screen = (*TerminalScreen)(nil)
 func NewTerminalScreen(w io.Writer, env Environ) *TerminalScreen {
 	s := &TerminalScreen{}
 	s.buf = &bytes.Buffer{}
-	s.win = NewScreen(0, 0)
+	s.win = NewWindow(0, 0, nil)
 	s.w = w
 	s.profile = colorprofile.Detect(w, env)
 	s.rend = NewTerminalRenderer(s.buf, env)
@@ -64,12 +77,15 @@ func NewTerminalScreen(w io.Writer, env Environ) *TerminalScreen {
 	f, ok := w.(term.File)
 	if ok {
 		state, err := term.GetState(f.Fd())
-		if err == nil {
+		if err == nil || isWindows { // Windows supports tabs and backspace by default, so we can ignore errors here.
 			useTabs, useBspace := optimizeMovements(state)
 			if useTabs {
 				s.rend.SetTabStops(0) // the width will be set after calling [TerminalScreen.Resize]
+			} else {
+				s.rend.SetTabStops(-1)
 			}
 			s.rend.SetBackspace(useBspace)
+			s.resetTabs = useTabs
 		}
 	}
 	// XXX: Do we still need map nl to crlf handling in the renderer?
@@ -92,14 +108,86 @@ func (s *TerminalScreen) Bounds() Rectangle {
 	return s.win.Bounds()
 }
 
+// Width returns the width of the terminal screen.
+//
+// Note that this is not the actual width of the terminal window, but rather
+// the width of the screen we're managing. The actual width of the terminal
+// window can be obtained using [Terminal.GetSize] or by reading the "COLUMNS"
+// environment variable.
+func (s *TerminalScreen) Width() int {
+	return s.win.Width()
+}
+
+// Height returns the height of the terminal screen.
+//
+// Note that this is not the actual height of the terminal window, but rather
+// the height of the screen we're managing. The actual height of the terminal
+// window can be obtained using [Terminal.GetSize] or by reading the "LINES"
+// environment variable.
+func (s *TerminalScreen) Height() int {
+	return s.win.Height()
+}
+
+// StringWidth returns the cell width of the given string using the terminal
+// screen's width method. This accounts for the configured [WidthMethod]
+// (e.g. wcwidth vs grapheme width) so callers don't need to import ansi
+// directly.
+func (s *TerminalScreen) StringWidth(str string) int {
+	return s.win.WidthMethod().StringWidth(str)
+}
+
 // WidthMethod returns the width method used by the terminal screen.
 func (s *TerminalScreen) WidthMethod() WidthMethod {
 	return s.win.WidthMethod()
 }
 
-// SetWidthMethod sets the width method for the terminal screen.
+// SetWidthMethod sets the width method for the terminal screen. This is an
+// override that propagates to the window/buffer and the renderer so that all
+// width measurements use the same method. Calling this marks the width method
+// as explicitly overridden, which disables automatic mode-2027 negotiation.
 func (s *TerminalScreen) SetWidthMethod(method ansi.Method) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.widthMethodOverride = true
+	s.setWidthMethod(method)
+}
+
+// setWidthMethod propagates the width method to the window/buffer and the
+// renderer. Callers must hold s.mu.
+func (s *TerminalScreen) setWidthMethod(method ansi.Method) {
 	s.win.SetWidthMethod(method)
+	s.rend.SetWidthMethod(method)
+}
+
+// requestGraphemeWidth queues a DECRQM request for Unicode core mode (DEC mode
+// 2027) so the terminal reports whether it measures cell width using grapheme
+// clustering. The response arrives as a [ModeReportEvent].
+func (s *TerminalScreen) requestGraphemeWidth() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.buf.WriteString(ansi.RequestMode(ansi.ModeUnicodeCore))
+}
+
+// enableGraphemeWidth enables Unicode core mode (DEC mode 2027) on the terminal
+// and switches the screen's width method to [ansi.GraphemeWidth] so wide-glyph
+// measurement matches the terminal. The change propagates to the
+// window/buffer and renderer.
+//
+// If the application has explicitly set a width method via
+// [TerminalScreen.SetWidthMethod], the explicit choice is preserved and this is
+// a no-op. The change is committed to the underlying writer through the
+// screen's normal locked write path so it cannot race with Render/Flush.
+func (s *TerminalScreen) enableGraphemeWidth() {
+	s.mu.Lock()
+	if s.widthMethodOverride {
+		s.mu.Unlock()
+		return
+	}
+	s.buf.WriteString(ansi.SetMode(ansi.ModeUnicodeCore))
+	s.setWidthMethod(ansi.GraphemeWidth)
+	s.rend.SetGraphemeWidth(true)
+	s.mu.Unlock()
+	_ = s.Flush()
 }
 
 // SetColorProfile sets the color profile for the terminal screen.
@@ -112,13 +200,11 @@ func (s *TerminalScreen) SetColorProfile(profile colorprofile.Profile) {
 
 // Resize resizes the terminal screen to the specified width and height,
 // updating the render buffer and renderer accordingly.
-func (s *TerminalScreen) Resize(width, height int) error {
+func (s *TerminalScreen) Resize(width, height int) {
 	s.win.Resize(width, height)
 	s.rbuf.Resize(width, height)
 	s.rend.Resize(width, height)
 	s.rend.Erase()
-	s.rbuf.Touched = nil
-	return nil
 }
 
 // Display clears the screen and draws the given [Drawable] onto the terminal
@@ -131,9 +217,7 @@ func (s *TerminalScreen) Display(d Drawable) error {
 		s.win.Clear()
 		d.Draw(s, s.win.Bounds())
 	}
-	if err := s.Render(); err != nil {
-		return err
-	}
+	s.Render()
 	return s.Flush()
 }
 
@@ -142,7 +226,9 @@ func (s *TerminalScreen) Display(d Drawable) error {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) Render() error {
+func (s *TerminalScreen) Render() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	for y := 0; y < s.win.Height(); y++ {
 		for x := 0; x < s.win.Width(); {
 			cell := s.win.CellAt(x, y)
@@ -159,11 +245,13 @@ func (s *TerminalScreen) Render() error {
 		}
 	}
 	s.rend.Render(s.rbuf)
-	return s.rend.Flush()
+	_ = s.rend.Flush()
 }
 
 // Flush writes any pending output to the underlying writer.
 func (s *TerminalScreen) Flush() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.cursor != nil && !s.cursor.Hidden && s.cursor.X >= 0 && s.cursor.Y >= 0 {
 		s.rend.MoveTo(s.cursor.X, s.cursor.Y)
 	} else if !s.altScreen {
@@ -224,7 +312,7 @@ func (s *TerminalScreen) Flush() error {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) EnterAltScreen() error {
+func (s *TerminalScreen) EnterAltScreen() {
 	var sb strings.Builder
 	sb.WriteString(ansi.SetModeAltScreenSaveCursor)
 	if s.cursor == nil || s.cursor.Hidden {
@@ -233,12 +321,9 @@ func (s *TerminalScreen) EnterAltScreen() error {
 		sb.WriteString(ansi.ShowCursor)
 	}
 	if s.keyboardEnhancements != nil {
-		_ = EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements)
+		EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements)
 	}
-	_, err := s.buf.WriteString(sb.String())
-	if err != nil {
-		return err
-	}
+	s.buf.WriteString(sb.String())
 
 	if !s.altScreen {
 		s.rend.SaveCursor()
@@ -247,8 +332,6 @@ func (s *TerminalScreen) EnterAltScreen() error {
 		s.rend.SetRelativeCursor(false)
 		s.altScreen = true
 	}
-
-	return nil
 }
 
 // ExitAltScreen switches the terminal back to the main screen buffer, restoring
@@ -256,7 +339,7 @@ func (s *TerminalScreen) EnterAltScreen() error {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) ExitAltScreen() error {
+func (s *TerminalScreen) ExitAltScreen() {
 	var sb strings.Builder
 	sb.WriteString(ansi.ResetModeAltScreenSaveCursor)
 	if s.cursor == nil || s.cursor.Hidden {
@@ -265,12 +348,9 @@ func (s *TerminalScreen) ExitAltScreen() error {
 		sb.WriteString(ansi.ShowCursor)
 	}
 	if s.keyboardEnhancements != nil {
-		_ = EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements)
+		EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements)
 	}
-	_, err := s.buf.WriteString(sb.String())
-	if err != nil {
-		return err
-	}
+	s.buf.WriteString(sb.String())
 
 	if s.altScreen {
 		s.rend.RestoreCursor()
@@ -279,8 +359,6 @@ func (s *TerminalScreen) ExitAltScreen() error {
 		s.rend.SetRelativeCursor(true)
 		s.altScreen = false
 	}
-
-	return nil
 }
 
 // AltScreen returns whether the terminal is currently in the alternate screen
@@ -293,36 +371,24 @@ func (s *TerminalScreen) AltScreen() bool {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) HideCursor() error {
-	_, err := s.buf.WriteString(ansi.HideCursor)
-	if err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) HideCursor() {
+	s.buf.WriteString(ansi.HideCursor)
 	if s.cursor != nil {
 		s.cursor.Hidden = true
 	}
-
-	return nil
 }
 
 // ShowCursor shows the terminal cursor.
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) ShowCursor() error {
-	_, err := s.buf.WriteString(ansi.ShowCursor)
-	if err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) ShowCursor() {
+	s.buf.WriteString(ansi.ShowCursor)
 	if s.cursor != nil {
 		s.cursor.Hidden = false
 	} else {
 		s.cursor = NewCursor(-1, -1)
 	}
-
-	return nil
 }
 
 // CursorVisible returns whether the terminal cursor is currently visible.
@@ -335,7 +401,7 @@ func (s *TerminalScreen) CursorVisible() bool {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetCursorPosition(x, y int) error {
+func (s *TerminalScreen) SetCursorPosition(x, y int) {
 	if s.cursor == nil {
 		s.cursor = NewCursor(x, y)
 		s.cursor.Hidden = true
@@ -343,7 +409,6 @@ func (s *TerminalScreen) SetCursorPosition(x, y int) error {
 		s.cursor.X = x
 		s.cursor.Y = y
 	}
-	return nil
 }
 
 // CursorPosition returns the last set cursor position of the terminal. If the
@@ -362,18 +427,13 @@ func (s *TerminalScreen) CursorPosition() (x, y int) {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetCursorStyle(shape CursorShape, blink bool) error {
-	if err := EncodeCursorStyle(s.buf, shape, blink); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetCursorStyle(shape CursorShape, blink bool) {
+	EncodeCursorStyle(s.buf, shape, blink)
 	if s.cursor == nil {
 		s.cursor = NewCursor(-1, -1)
 	}
 	s.cursor.Shape = shape
 	s.cursor.Blink = blink
-
-	return nil
 }
 
 // CursorStyle returns the current style of the terminal cursor.
@@ -388,17 +448,12 @@ func (s *TerminalScreen) CursorStyle() (shape CursorShape, blink bool) {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetCursorColor(c color.Color) error {
-	if err := EncodeCursorColor(s.buf, c); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetCursorColor(c color.Color) {
+	EncodeCursorColor(s.buf, c)
 	if s.cursor == nil {
 		s.cursor = NewCursor(-1, -1)
 	}
 	s.cursor.Color = c
-
-	return nil
 }
 
 // CursorColor returns the current color of the terminal cursor.
@@ -416,14 +471,9 @@ func (s *TerminalScreen) CursorColor() color.Color {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetBackgroundColor(c color.Color) error {
-	if err := EncodeBackgroundColor(s.buf, c); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetBackgroundColor(c color.Color) {
+	EncodeBackgroundColor(s.buf, c)
 	s.backgroundColor = c
-
-	return nil
 }
 
 // BackgroundColor returns the current background color of the terminal.
@@ -438,14 +488,9 @@ func (s *TerminalScreen) BackgroundColor() color.Color {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetForegroundColor(c color.Color) error {
-	if err := EncodeForegroundColor(s.buf, c); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetForegroundColor(c color.Color) {
+	EncodeForegroundColor(s.buf, c)
 	s.foregroundColor = c
-
-	return nil
 }
 
 // ForegroundColor returns the current foreground color of the terminal.
@@ -461,30 +506,18 @@ func (s *TerminalScreen) ForegroundColor() color.Color {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) EnableBracketedPaste() error {
-	_, err := s.buf.WriteString(ansi.SetModeBracketedPaste)
-	if err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) EnableBracketedPaste() {
+	s.buf.WriteString(ansi.SetModeBracketedPaste)
 	s.bracketedPaste = true
-
-	return nil
 }
 
 // DisableBracketedPaste disables bracketed paste mode.
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) DisableBracketedPaste() error {
-	_, err := s.buf.WriteString(ansi.ResetModeBracketedPaste)
-	if err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) DisableBracketedPaste() {
+	s.buf.WriteString(ansi.ResetModeBracketedPaste)
 	s.bracketedPaste = false
-
-	return nil
 }
 
 // BracketedPaste returns whether bracketed paste mode is currently enabled.
@@ -498,9 +531,8 @@ func (s *TerminalScreen) BracketedPaste() bool {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetSynchronizedUpdates(enabled bool) error {
+func (s *TerminalScreen) SetSynchronizedUpdates(enabled bool) {
 	s.syncUpdates = enabled
-	return nil
 }
 
 // SynchronizedUpdates returns whether synchronized updates (mode 2026) are
@@ -509,38 +541,44 @@ func (s *TerminalScreen) SynchronizedUpdates() bool {
 	return s.syncUpdates
 }
 
-// SetMouseMode sets the mouse mode for the terminal, allowing applications to
-// receive mouse events.
+// SetMouseMode sets the mouse tracking mode for the terminal, allowing
+// applications to receive mouse events.
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetMouseMode(mode MouseMode) error {
-	if err := EncodeMouseMode(s.buf, mode); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetMouseMode(mode MouseMode) {
+	EncodeMouseMode(s.buf, mode)
 	s.mouseMode = mode
-
-	return nil
 }
 
-// MouseMode returns the current mouse mode of the terminal.
+// MouseMode returns the current mouse tracking mode of the terminal.
 func (s *TerminalScreen) MouseMode() MouseMode {
 	return s.mouseMode
+}
+
+// SetMouseEncoding sets the mouse encoding for the terminal.
+// The encoding determines how mouse coordinates and buttons are reported.
+// This is only meaningful when mouse tracking is enabled via [TerminalScreen.SetMouseMode].
+//
+// The changes can be committed to the underlying writer by calling the
+// [TerminalScreen.Flush] method.
+func (s *TerminalScreen) SetMouseEncoding(enc MouseEncoding) {
+	EncodeMouseEncoding(s.buf, enc)
+	s.mouseEncoding = enc
+}
+
+// MouseEncoding returns the current mouse encoding of the terminal.
+func (s *TerminalScreen) MouseEncoding() MouseEncoding {
+	return s.mouseEncoding
 }
 
 // SetWindowTitle sets the title of the terminal window.
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetWindowTitle(title string) error {
-	if err := EncodeWindowTitle(s.buf, title); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetWindowTitle(title string) {
+	EncodeWindowTitle(s.buf, title)
 	s.windowTitle = title
-
-	return nil
 }
 
 // WindowTitle returns the current title of the terminal window.
@@ -553,14 +591,9 @@ func (s *TerminalScreen) WindowTitle() string {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetKeyboardEnhancements(enh *KeyboardEnhancements) error {
-	if err := EncodeKeyboardEnhancements(s.buf, enh); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetKeyboardEnhancements(enh *KeyboardEnhancements) {
+	EncodeKeyboardEnhancements(s.buf, enh)
 	s.keyboardEnhancements = enh
-
-	return nil
 }
 
 // KeyboardEnhancements returns the current keyboard enhancements of the terminal.
@@ -575,14 +608,9 @@ func (s *TerminalScreen) KeyboardEnhancements() *KeyboardEnhancements {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) SetProgressBar(pb *ProgressBar) error {
-	if err := EncodeProgressBar(s.buf, pb); err != nil {
-		return err
-	}
-
+func (s *TerminalScreen) SetProgressBar(pb *ProgressBar) {
+	EncodeProgressBar(s.buf, pb)
 	s.progressBar = pb
-
-	return nil
 }
 
 // ProgressBar returns the current progress bar of the terminal.
@@ -598,7 +626,7 @@ func (s *TerminalScreen) ProgressBar() *ProgressBar {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) Reset() error {
+func (s *TerminalScreen) Reset() {
 	var sb strings.Builder
 
 	hasKeyboardEnhancements := s.keyboardEnhancements != nil
@@ -613,7 +641,10 @@ func (s *TerminalScreen) Reset() error {
 		sb.WriteString(ansi.KittyKeyboard(0, 1))
 	}
 	if s.mouseMode != MouseModeNone {
-		_ = EncodeMouseMode(&sb, MouseModeNone)
+		EncodeMouseMode(&sb, MouseModeNone)
+	}
+	if s.mouseEncoding != MouseEncodingLegacy {
+		EncodeMouseEncoding(&sb, MouseEncodingLegacy)
 	}
 
 	if s.cursor == nil || !s.cursor.Hidden {
@@ -643,10 +674,7 @@ func (s *TerminalScreen) Reset() error {
 		sb.WriteString(ansi.ResetProgressBar)
 	}
 
-	_, err := s.buf.WriteString(sb.String())
-	if err != nil {
-		return err
-	}
+	s.buf.WriteString(sb.String())
 
 	// Go to the bottom of the screen.
 	// We need to go to the bottom of the screen regardless of whether
@@ -659,8 +687,6 @@ func (s *TerminalScreen) Reset() error {
 	//
 	// Note that both [TerminalScreen.rend] writes to [TerminalScreen.buf].
 	s.rend.MoveTo(0, s.win.Height()-1)
-
-	return nil
 }
 
 // Restore restores the terminal screen to its previous state, applying any
@@ -668,9 +694,12 @@ func (s *TerminalScreen) Reset() error {
 //
 // The changes can be committed to the underlying writer by calling the
 // [TerminalScreen.Flush] method.
-func (s *TerminalScreen) Restore() error {
+func (s *TerminalScreen) Restore() {
 	var sb strings.Builder
 
+	if s.resetTabs {
+		sb.WriteString(ansi.SetTabEvery8Columns)
+	}
 	if s.altScreen {
 		sb.WriteString(ansi.SetModeAltScreenSaveCursor)
 	}
@@ -681,53 +710,39 @@ func (s *TerminalScreen) Restore() error {
 		sb.WriteString(ansi.HideCursor)
 	}
 	if s.keyboardEnhancements != nil {
-		if err := EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements); err != nil {
-			return err
-		}
+		EncodeKeyboardEnhancements(&sb, s.keyboardEnhancements)
 	}
 	if s.mouseMode != MouseModeNone {
-		if err := EncodeMouseMode(&sb, s.mouseMode); err != nil {
-			return err
-		}
+		EncodeMouseMode(&sb, s.mouseMode)
+	}
+	if s.mouseEncoding != MouseEncodingLegacy {
+		EncodeMouseEncoding(&sb, s.mouseEncoding)
 	}
 	if s.cursor != nil {
 		if s.cursor.Shape != CursorBlock || !s.cursor.Blink {
-			_ = EncodeCursorStyle(&sb, s.cursor.Shape, s.cursor.Blink)
+			EncodeCursorStyle(&sb, s.cursor.Shape, s.cursor.Blink)
 		}
 		if s.cursor.Color != nil {
-			if err := EncodeCursorColor(&sb, s.cursor.Color); err != nil {
-				return err
-			}
+			EncodeCursorColor(&sb, s.cursor.Color)
 		}
 	}
 	if s.backgroundColor != nil {
-		if err := EncodeBackgroundColor(&sb, s.backgroundColor); err != nil {
-			return err
-		}
+		EncodeBackgroundColor(&sb, s.backgroundColor)
 	}
 	if s.foregroundColor != nil {
-		if err := EncodeForegroundColor(&sb, s.foregroundColor); err != nil {
-			return err
-		}
+		EncodeForegroundColor(&sb, s.foregroundColor)
 	}
 	if s.bracketedPaste {
 		sb.WriteString(ansi.SetModeBracketedPaste)
 	}
 	if s.windowTitle != "" {
-		if err := EncodeWindowTitle(&sb, s.windowTitle); err != nil {
-			return err
-		}
+		EncodeWindowTitle(&sb, s.windowTitle)
 	}
 	if s.progressBar != nil && s.progressBar.State != ProgressBarNone {
-		if err := EncodeProgressBar(&sb, s.progressBar); err != nil {
-			return err
-		}
+		EncodeProgressBar(&sb, s.progressBar)
 	}
 
-	_, err := s.buf.WriteString(sb.String())
-	if err != nil {
-		return err
-	}
+	s.buf.WriteString(sb.String())
 
 	// This needs to be called after restoring the screen state and writing to
 	// the buffer.
@@ -737,14 +752,10 @@ func (s *TerminalScreen) Restore() error {
 	// that the restore commands are included in the render output. This
 	// ensures that the screen is properly restored before rendering any
 	// changes.
-	if err := s.Render(); err != nil {
-		return err
-	}
+	s.Render()
 
 	// Cursor position will be restored by the caller after calling
 	// [TerminalScreen.Flush].
-
-	return nil
 }
 
 // Write writes data to the underlying buffer queuing it for output.
