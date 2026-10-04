@@ -12,6 +12,7 @@ require (
 	github.com/itchyny/gojq v0.12.19
 	github.com/unixshells/mosh-go v0.5.2
 	github.com/unixshells/vt-go v0.2.0
+	golang.org/x/crypto v0.57.0
 )
 
 require (

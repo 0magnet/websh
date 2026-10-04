@@ -131,6 +131,10 @@ func TestParseArgs(t *testing.T) {
 	if _, err := parseArgs([]string{"--key", "K", "--port", "1", "box"}, env(nil)); err == nil {
 		t.Fatal("no Wisp URL accepted")
 	}
+	a, err = parseArgs([]string{"--ssh-port", "2222", "me@box"}, env(map[string]string{"WISP_URL": "ws://e"}))
+	if err != nil || !a.bootstrap() || a.user != "me" || a.host != "box" || a.sshPort != 2222 {
+		t.Fatalf("ssh bootstrap: %+v %v", a, err)
+	}
 	if _, err := parseArgs(nil, env(nil)); err != errHelp {
 		t.Fatalf("no args = %v", err)
 	}

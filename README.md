@@ -48,6 +48,18 @@ bash in your browser: xterm-go + a Go shell interpreter + IndexedDB filesystem, 
 ```
 - Persistence: the filesystem diffs+flushes to IndexedDB after every command
 
+## ssh
+
+`ssh [-p port] [-i keyfile] [-l user] [-n] [user@]host [command]` is an ssh client ([golang.org/x/crypto/ssh](https://pkg.go.dev/golang.org/x/crypto/ssh)). A page cannot open a TCP connection, so **ssh only works through a Wisp server**: the session is a Wisp TCP stream, and the Wisp server (the same one mosh uses, below) is what connects to the host. Give it with `--wisp URL` or `$WISP_URL`.
+
+```
+user@websh:~$ export WISP_URL=wss://wisp.example.net/
+user@websh:~$ ssh me@remote.example.net
+user@websh:~$ ssh -p 2222 me@remote.example.net uptime
+```
+
+Passwords and keyboard-interactive prompts are read without echo. Keys come from websh's filesystem: `-i FILE`, then `~/.ssh/id_ed25519`, `id_ecdsa` and `id_rsa` (`upload` brings one in); an encrypted key asks for its passphrase. Host keys are checked against `~/.ssh/known_hosts`: an unknown host is shown by fingerprint and asked about, as OpenSSH does, and a changed key is refused. Without a command you get a login shell on a pty that follows the terminal's size; `~.` at the start of a line disconnects. With a command, its stdout, stderr and exit status come back (`-n`: send it no stdin).
+
 ## mosh
 
 `mosh` connects to a [mosh](https://mosh.org/) server from the browser. A page cannot send UDP, so mosh's datagrams ride a [Wisp](https://github.com/MercuryWorkshop/wisp-protocol) UDP stream instead, and a Wisp server sends them on as real UDP. The protocol is [mosh-go](https://github.com/unixshells/mosh-go); the transport is [0magnet/wisp](https://github.com/0magnet/wisp).
@@ -65,7 +77,14 @@ srv, _ := wisp.NewServer(wisp.Config{Egress: &wisp.DirectEgress{}}) // github.co
 http.ListenAndServe(":8090", srv)                                   // ws://HOST:8090/
 ```
 
-websh has no ssh, so start the server on the remote host yourself and give `mosh` what its `MOSH CONNECT` line says:
+With no `--key`, `mosh user@host` does what the real mosh script does: it logs in with `ssh` through the same Wisp server, runs `mosh-server new -c 256 -s -l LANG=...` there, and connects to the port and key from its `MOSH CONNECT` line. `--ssh-port` picks the ssh port.
+
+```
+user@websh:~$ export WISP_URL=wss://wisp.example.net/
+user@websh:~$ mosh me@remote.example.net
+```
+
+Or start the server yourself and give `mosh` what its `MOSH CONNECT` line says:
 
 ```
 remote$ mosh-server new
@@ -92,6 +111,7 @@ shell/browser/   js/wasm applets any embedder can turn on with browser.Register(
                    own capture, and backfills from it)
 shell/sed/       the sed engine, on io.Reader/io.Writer
 shell/mosh/      mosh over a Wisp UDP stream; mosh.Register() adds the command
+shell/ssh/       ssh over a Wisp TCP stream; ssh.Register() adds the command
 ```
 
 Embedders get the browser applets by importing one package:
