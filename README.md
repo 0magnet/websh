@@ -48,6 +48,36 @@ bash in your browser: xterm-go + a Go shell interpreter + IndexedDB filesystem, 
 ```
 - Persistence: the filesystem diffs+flushes to IndexedDB after every command
 
+## mosh
+
+`mosh` connects to a [mosh](https://mosh.org/) server from the browser. A page cannot send UDP, so mosh's datagrams ride a [Wisp](https://github.com/MercuryWorkshop/wisp-protocol) UDP stream instead, and a Wisp server sends them on as real UDP. The protocol is [mosh-go](https://github.com/unixshells/mosh-go); the transport is [0magnet/wisp](https://github.com/0magnet/wisp).
+
+Any Wisp v2 server with the UDP extension will do, such as skywire's:
+
+```bash
+skywire cli wisp serve
+```
+
+or a few lines of Go:
+
+```go
+srv, _ := wisp.NewServer(wisp.Config{Egress: &wisp.DirectEgress{}}) // github.com/0magnet/wisp
+http.ListenAndServe(":8090", srv)                                   // ws://HOST:8090/
+```
+
+websh has no ssh, so start the server on the remote host yourself and give `mosh` what its `MOSH CONNECT` line says:
+
+```
+remote$ mosh-server new
+MOSH CONNECT 60001 4NeCCgvZFe2RnPgrcU1PQw
+
+user@websh:~$ export WISP_URL=wss://wisp.example.net/
+user@websh:~$ mosh --port 60001 --key 4NeCCgvZFe2RnPgrcU1PQw remote.example.net
+user@websh:~$ mosh remote.example.net MOSH CONNECT 60001 4NeCCgvZFe2RnPgrcU1PQw   # or paste the line
+```
+
+`--wisp URL` overrides `$WISP_URL`, and `$MOSH_KEY` stands in for `--key`. The host is resolved and reached by the Wisp server, not by the browser. Ctrl-^ then `.` quits. `mosh` is in the standard Go build only (`/go/`): mosh-go's terminal model needs `hash/maphash`, which TinyGo does not have.
+
 ## Architecture
 
 ```
@@ -60,6 +90,8 @@ shell/browser/   js/wasm applets any embedder can turn on with browser.Register(
   browser.go       js, download, upload, curl, nc, pbcopy, pbpaste
   console.go       console.* capture behind `logs` (chains with a host page's
                    own capture, and backfills from it)
+shell/sed/       the sed engine, on io.Reader/io.Writer
+shell/mosh/      mosh over a Wisp UDP stream; mosh.Register() adds the command
 ```
 
 Embedders get the browser applets by importing one package:
