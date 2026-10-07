@@ -129,6 +129,9 @@ func (p *placements) place(id string, d placeData) {
 		pl.el = doc.Call("createElement", "div")
 		pl.el.Get("style").Set("cssText", "position:absolute;overflow:hidden")
 		layer.Call("append", pl.el)
+		// Placed before it is filled, so the widget can size itself from
+		// the element (a canvas, say).
+		p.position(pl)
 		pl.unmount = w(pl.el)
 	case strings.HasPrefix(d.URL, "https://") || strings.HasPrefix(d.URL, "http://"):
 		pl.el = doc.Call("createElement", "img")
