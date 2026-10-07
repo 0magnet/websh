@@ -59,6 +59,10 @@ type placeData struct {
 	H      int    `json:"h"`
 	URL    string `json:"url"`
 	Widget string `json:"widget"`
+	// Fit is how an image fills its cells: "contain" (the default: all of
+	// it, the cells showing at the edges where its shape differs), "cover"
+	// (all the cells, its edges cut) or "fill" (both, stretched).
+	Fit string `json:"fit"`
 }
 
 // A placement is one element over the cells.
@@ -107,7 +111,7 @@ func (p *placements) place(id string, d placeData) {
 		return
 	}
 	if old := p.by[id]; old != nil {
-		if old.d.URL == d.URL && old.d.Widget == d.Widget {
+		if old.d.URL == d.URL && old.d.Widget == d.Widget && old.d.Fit == d.Fit {
 			old.d = d // same content: only moved
 			p.position(old)
 			return
@@ -128,7 +132,11 @@ func (p *placements) place(id string, d placeData) {
 		pl.unmount = w(pl.el)
 	case strings.HasPrefix(d.URL, "https://") || strings.HasPrefix(d.URL, "http://"):
 		pl.el = doc.Call("createElement", "img")
-		pl.el.Get("style").Set("cssText", "position:absolute;object-fit:contain")
+		fit := "contain"
+		if d.Fit == "cover" || d.Fit == "fill" {
+			fit = d.Fit
+		}
+		pl.el.Get("style").Set("cssText", "position:absolute;object-fit:"+fit)
 		pl.el.Set("src", d.URL)
 		pl.el.Set("alt", "")
 		layer.Call("append", pl.el)

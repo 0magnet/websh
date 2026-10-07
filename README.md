@@ -107,7 +107,7 @@ is base64 of a JSON object.
 
 | Sequence | Does |
 | --- | --- |
-| `OSC 7337 ; place ; <id> ; <data> ST` | lays an image (`"url"`) or a widget (`"widget"`) over the cells `{"row","col","w","h"}`, borderless |
+| `OSC 7337 ; place ; <id> ; <data> ST` | lays an image (`"url"`, with `"fit"`: `contain`, `cover` or `fill`) or a widget (`"widget"`) over the cells `{"row","col","w","h"}`, borderless |
 | `OSC 7337 ; remove ; <id> ST` | takes a placement away |
 | `OSC 7337 ; clear ST` | takes them all away |
 | `OSC 7337 ; view ; <data> ST` | shows `{"url","title"}` in a window over the shell, unless the person closed it |
