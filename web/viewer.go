@@ -41,9 +41,22 @@ type viewer struct {
 // wireViewer has the terminal answer the viewer's escape sequence.
 func (s *Session) wireViewer(el js.Value) {
 	v := &viewer{root: el}
+	p := newPlacements(s, el)
+	s.placements = p
 	s.Term.Core.InputHandler().RegisterOscHandler(ViewerOSC, func(data string) bool {
 		cmd, arg, _ := strings.Cut(data, ";")
+		p.reposition()
 		switch cmd {
+		case "place":
+			id, enc, _ := strings.Cut(arg, ";")
+			var d placeData
+			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
+				p.place(id, d)
+			}
+		case "remove":
+			p.remove(arg)
+		case "clear":
+			p.clear()
 		case "close":
 			v.close()
 		case "view", "open":

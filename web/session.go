@@ -138,6 +138,7 @@ type Session struct {
 	zoomFns []zoomBinding
 
 	afterCommand func()
+	placements   *placements // what programs laid over the cells (place.go)
 	onExit       func()
 }
 
@@ -411,6 +412,10 @@ func (s *Session) run() {
 			if msg := err.Error(); !strings.HasPrefix(msg, "exit status") {
 				s.Term.WriteString(s.host + ": " + strings.ReplaceAll(msg, "\n", "\r\n") + "\r\n")
 			}
+		}
+		// What the command laid over the cells goes with it.
+		if s.placements != nil {
+			s.placements.clear()
 		}
 		if s.afterCommand != nil {
 			s.afterCommand()

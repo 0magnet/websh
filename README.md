@@ -97,6 +97,28 @@ user@websh:~$ mosh remote.example.net MOSH CONNECT 60001 4NeCCgvZFe2RnPgrcU1PQw 
 
 `--wisp URL` overrides `$WISP_URL`, and `$MOSH_KEY` stands in for `--key`. The host is resolved and reached by the Wisp server, not by the browser. Ctrl-^ then `.` quits. `mosh` is in the standard Go build only (`/go/`): mosh-go's terminal model needs `hash/maphash`, which TinyGo 0.42 cannot compile against Go 1.27, and against Go 1.26 it builds, but some ten times slower: go-runewidth's init writes into a 2 MB per-rune table, which stock TinyGo's compile-time interpreter serializes in quadratic time (fixed in the [0magnet/tinygo](https://github.com/0magnet/tinygo) fork, not yet upstream).
 
+## Images and widgets over the terminal
+
+A program in websh can show real images and page-provided widgets by
+writing an escape sequence, OSC 7337, like OSC 8 makes a link. It is output
+like any other, so it also works from a program on the far end of an ssh or
+dmsg session, and a terminal that does not know it ignores it. Each `<data>`
+is base64 of a JSON object.
+
+| Sequence | Does |
+| --- | --- |
+| `OSC 7337 ; place ; <id> ; <data> ST` | lays an image (`"url"`) or a widget (`"widget"`) over the cells `{"row","col","w","h"}`, borderless |
+| `OSC 7337 ; remove ; <id> ST` | takes a placement away |
+| `OSC 7337 ; clear ST` | takes them all away |
+| `OSC 7337 ; view ; <data> ST` | shows `{"url","title"}` in a window over the shell, unless the person closed it |
+| `OSC 7337 ; open ; <data> ST` | the same, even if they did |
+| `OSC 7337 ; close ST` | closes the window |
+
+Placements take no input: keys and the mouse still go to the program. What
+a command placed is taken away when it ends. Widgets are only what the page
+registers with `web.RegisterWidget(name, mount)`; a program can name one,
+never supply one.
+
 ## Architecture
 
 ```
