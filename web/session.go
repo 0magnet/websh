@@ -182,7 +182,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	// Watch the container, not the window: mounted in anything smaller than
 	// the page, the window never changes when the terminal's box does.
 	s.Term.AutoFit()
-	s.wireViewer()
+	s.wireViewer(el)
 	if !opt.NoWebGL {
 		if err := s.Term.EnableWebGL(); err != nil {
 			js.Global().Get("console").Call("log", "websh: webgl unavailable: "+err.Error())

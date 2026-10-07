@@ -27,8 +27,11 @@ import (
 // ViewerOSC is the viewer's OSC number.
 const ViewerOSC = 7337
 
-// A viewer is a session's one image window.
+// A viewer is a session's one image window. It is made inside the
+// session's own element, so it shares the terminal's stacking context and
+// shows above it however the page raises the terminal.
 type viewer struct {
+	root      js.Value
 	win       *winbox.WinBox
 	img       js.Value
 	dismissed bool // the person closed it: view leaves it closed
@@ -36,8 +39,8 @@ type viewer struct {
 }
 
 // wireViewer has the terminal answer the viewer's escape sequence.
-func (s *Session) wireViewer() {
-	v := &viewer{}
+func (s *Session) wireViewer(el js.Value) {
+	v := &viewer{root: el}
 	s.Term.Core.InputHandler().RegisterOscHandler(ViewerOSC, func(data string) bool {
 		cmd, arg, _ := strings.Cut(data, ";")
 		switch cmd {
@@ -85,6 +88,7 @@ func (v *viewer) show(url, title string) {
 	vw := js.Global().Get("innerWidth").Float()
 	w := min(480, vw*0.45)
 	v.win = winbox.New(&winbox.Options{
+		Root:   v.root,
 		Title:  title,
 		Mount:  box,
 		Width:  winbox.Px(w),
