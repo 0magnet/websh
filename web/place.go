@@ -22,8 +22,10 @@ import (
 // and "url": "https://…" (an image) or "widget": "<name>"}, row and col from
 // 0 at the top left of the screen. The program draws its own cells under it
 // as ever, which a terminal without placements shows instead, and which show
-// through where an image does not cover them. A placement takes no input: the
-// mouse and the keys still go to the program. What a command placed is taken
+// through where an image does not cover them. A placement takes no input —
+// the mouse and the keys still go to the program — unless it asks with
+// "input": true: then the mouse over it is its own (a widget turned or zoomed
+// by hand), and the program keeps the keys. What a command placed is taken
 // away when it ends.
 
 // A Widget makes a widget's elements in el, the placement it fills, and
@@ -63,6 +65,8 @@ type placeData struct {
 	// it, the cells showing at the edges where its shape differs), "cover"
 	// (all the cells, its edges cut) or "fill" (both, stretched).
 	Fit string `json:"fit"`
+	// Input gives the placement the mouse over it, instead of the program.
+	Input bool `json:"input"`
 }
 
 // A placement is one element over the cells.
@@ -70,6 +74,7 @@ type placement struct {
 	d       placeData
 	el      js.Value
 	unmount func()
+	stops   []js.Func // what keeps its mouse from the terminal
 }
 
 // placements is a session's layer of placements: one element over the
@@ -111,7 +116,7 @@ func (p *placements) place(id string, d placeData) {
 		return
 	}
 	if old := p.by[id]; old != nil {
-		if old.d.URL == d.URL && old.d.Widget == d.Widget && old.d.Fit == d.Fit {
+		if old.d.URL == d.URL && old.d.Widget == d.Widget && old.d.Fit == d.Fit && old.d.Input == d.Input {
 			old.d = d // same content: only moved
 			p.position(old)
 			return
@@ -146,6 +151,9 @@ func (p *placements) place(id string, d placeData) {
 	default:
 		return
 	}
+	if d.Input {
+		p.takeInput(pl)
+	}
 	p.by[id] = pl
 	p.position(pl)
 }
@@ -158,6 +166,9 @@ func (p *placements) position(pl *placement) {
 	}
 	p.cols, p.rows = cols, rows
 	pct := func(n, of int) string { return strconv.FormatFloat(100*float64(n)/float64(of), 'f', 4, 64) + "%" }
+	// Its cells, for a widget drawn in them (data-cols, data-rows).
+	pl.el.Get("dataset").Set("cols", pl.d.W)
+	pl.el.Get("dataset").Set("rows", pl.d.H)
 	st := pl.el.Get("style")
 	st.Set("left", pct(pl.d.Col, cols))
 	st.Set("top", pct(pl.d.Row, rows))
@@ -185,11 +196,34 @@ func (p *placements) remove(id string) {
 	if pl.unmount != nil {
 		pl.unmount()
 	}
+	for _, f := range pl.stops {
+		f.Release()
+	}
 	pl.el.Call("remove")
 }
 
 func (p *placements) clear() {
 	for id := range p.by {
 		p.remove(id)
+	}
+}
+
+// takeInput gives pl the mouse over it. The terminal listens on elements
+// around the layer, so the events stop at pl: they would otherwise reach it
+// as well, as clicks and wheel turns for the program. A press keeps the
+// focus where it was, so the keys still go to the program.
+func (p *placements) takeInput(pl *placement) {
+	pl.el.Get("style").Set("pointerEvents", "auto")
+	for _, name := range []string{"mousedown", "mouseup", "mousemove", "click", "dblclick", "contextmenu", "wheel", "touchstart", "touchmove", "touchend"} {
+		f := js.FuncOf(func(_ js.Value, args []js.Value) any {
+			e := args[0]
+			e.Call("stopPropagation")
+			if e.Get("type").String() == "mousedown" {
+				e.Call("preventDefault")
+			}
+			return nil
+		})
+		pl.el.Call("addEventListener", name, f)
+		pl.stops = append(pl.stops, f)
 	}
 }

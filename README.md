@@ -114,8 +114,9 @@ is base64 of a JSON object.
 | `OSC 7337 ; open ; <data> ST` | the same, even if they did |
 | `OSC 7337 ; close ST` | closes the window |
 
-Placements take no input: keys and the mouse still go to the program. What
-a command placed is taken away when it ends. Widgets are only what the page
+A placement takes no input unless it asks with `"input": true`: then the mouse
+over it goes to it (a widget can be dragged or zoomed, say) and not to the
+program, which keeps the keys. What a command placed is taken away when it ends. Widgets are only what the page
 registers with `web.RegisterWidget(name, mount)`; a program can name one,
 never supply one.
 
