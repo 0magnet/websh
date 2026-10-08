@@ -33,7 +33,9 @@ build_go() {
 # bottle's page scripts — the filesystem, the loopback network and processes —
 # at the version go.mod names, so the page and the Go that talks to them agree.
 bottle_js() {
+	GOFLAGS=-mod=mod go mod download github.com/0magnet/bottle
 	dir=$(GOFLAGS=-mod=mod go list -m -f '{{.Dir}}' github.com/0magnet/bottle)
+	[ -n "$dir" ] || { echo 'bottle: module not found' >&2; exit 1; }
 	for f in jsfs.js vnet.js proc.js; do cp "$dir/$f" "docs/$f"; chmod 644 "docs/$f"; done
 }
 
