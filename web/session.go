@@ -413,6 +413,7 @@ func (s *Session) run() {
 		// What the command laid over the cells goes with it.
 		if s.placements != nil {
 			s.placements.clear()
+			s.placements.forgetShipped()
 		}
 		if s.afterCommand != nil {
 			s.afterCommand()

@@ -57,6 +57,10 @@ func (s *Session) wireViewer(el js.Value) {
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
 				p.place(id, d)
 			}
+		case "ship":
+			name, rest, _ := strings.Cut(arg, ";")
+			meta, chunk, _ := strings.Cut(rest, ";")
+			p.ship(name, meta, chunk)
 		case "post":
 			id, enc, _ := strings.Cut(arg, ";")
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil {

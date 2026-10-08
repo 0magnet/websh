@@ -17,6 +17,11 @@
 // press reaches the program as an event on its input; the program counts it
 // in its cells and posts the count back, which the widget shows. Clicks on
 // the box are reported with the cell under them.
+//
+// Beside it is the same widget again, shipped: sent as a document in this
+// program's output and run by the host in a sandboxed iframe. That is how a
+// program on another machine, over ssh, puts its widgets in the tab; it
+// talks over the same line.
 package main
 
 import (
@@ -40,6 +45,7 @@ type state struct {
 	keys    int
 	last    string
 	presses int
+	shipped int
 	event   string
 }
 
@@ -65,8 +71,14 @@ func main() {
 		os.Exit(1)
 	}
 	st := &state{placed: widget.Shown(), last: "none yet", event: "none yet"}
+	say := func(seq string) { fmt.Fprint(out, seq) } //nolint:errcheck,gosec // the terminal; nowhere else to report to
 	if st.placed {
 		widget.RegisterConn("ttydemo", mount)
+	}
+	if progressive.Current().Has("ship") {
+		for _, seq := range progressive.Ship("ttydemo-shipped", []byte(shippedWidget)) {
+			say(seq)
+		}
 	}
 	// The host's events join the keys in tcell's one queue.
 	if evs := childtty.Events(); evs != nil {
@@ -77,7 +89,6 @@ func main() {
 		}()
 	}
 
-	say := func(seq string) { fmt.Fprint(out, seq) } //nolint:errcheck,gosec // the terminal; nowhere else to report to
 	for {
 		draw(s, say, st)
 		switch ev := (<-s.EventQ()).(type) {
@@ -91,8 +102,13 @@ func main() {
 					Pressed bool `json:"pressed"`
 				}
 				if json.Unmarshal(ev.Data, &m) == nil && m.Pressed {
-					st.presses++
-					say(progressive.Post("demo", map[string]int{"count": st.presses}))
+					if ev.ID == "shipped" {
+						st.shipped++
+						say(progressive.Post("shipped", map[string]int{"count": st.shipped}))
+					} else {
+						st.presses++
+						say(progressive.Post("demo", map[string]int{"count": st.presses}))
+					}
 				}
 				st.event += " " + string(ev.Data)
 			default:
@@ -106,7 +122,7 @@ func main() {
 					say(progressive.Clear())
 				}
 				s.Fini()
-				say(fmt.Sprintf("ttydemo: %d keys, %d presses\n", st.keys, st.presses))
+				say(fmt.Sprintf("ttydemo: %d keys, %d presses, %d shipped presses\n", st.keys, st.presses, st.shipped))
 				// TinyGo keeps a js program alive after main returns, for its
 				// callbacks; only an exit ends it.
 				os.Exit(0)
@@ -142,7 +158,7 @@ func draw(s tcell.Screen, say func(string), st *state) {
 		fmt.Sprintf("terminal %dx%d — resize the window", w, h),
 		fmt.Sprintf("keys %d, last %s", st.keys, st.last),
 		host,
-		fmt.Sprintf("widget presses counted here: %d; last event: %s", st.presses, st.event),
+		fmt.Sprintf("presses counted here: offered widget %d, shipped widget %d; last event: %s", st.presses, st.shipped, st.event),
 		"q or Ctrl+C quits",
 	}
 	for i, l := range lines {
@@ -159,11 +175,39 @@ func draw(s tcell.Screen, say func(string), st *state) {
 		}
 		s.PutStr(bx+1, by+1, "cells under the widget")
 	}
+	// The second box, for the shipped widget.
+	sx, sw := bx+bw+2, min(40, w-(bx+bw+2)-2)
+	if sw > 2 && bh > 2 {
+		for y := by; y < by+bh; y++ {
+			for x := sx; x < sx+sw; x++ {
+				s.Put(x, y, "▒", tcell.StyleDefault.Foreground(color.Gray))
+			}
+		}
+		s.PutStr(sx+1, by+1, "cells under the shipped one")
+	}
 	s.Show()
 	if st.placed && bw > 2 && bh > 2 {
 		say(progressive.Place("demo", progressive.Placement{Row: by, Col: bx, W: bw, H: bh, Widget: "ttydemo", Input: true, Events: true}))
 	}
+	if progressive.Current().Has("ship") && sw > 2 && bh > 2 {
+		say(progressive.Place("shipped", progressive.Placement{Row: by, Col: sx, W: sw, H: bh, Widget: "ttydemo-shipped", Input: true, Events: true}))
+	}
 }
+
+// shippedWidget is the widget sent as content: what a program on another
+// machine would ship. It runs sandboxed, and has only websh.send and
+// websh.onmessage.
+const shippedWidget = `<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;height:100%;font:14px sans-serif;color:#fff;
+background:linear-gradient(135deg,#5f3dc4,#c2255c)}
+body{display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center}
+button{font:14px sans-serif;padding:6px 12px;cursor:pointer}</style>
+<button>press: tell the program (shipped)</button>
+<div id="said">shipped, sandboxed; the program has said nothing yet</div>
+<script>
+document.querySelector("button").onclick = () => websh.send({pressed: true});
+websh.onmessage(m => { document.getElementById("said").textContent = "the program counted " + m.count; });
+</script>`
 
 // mount fills the placement with html made in this process: a button that
 // tells the program, and a line showing what the program says back.

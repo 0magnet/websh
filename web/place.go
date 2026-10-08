@@ -101,6 +101,8 @@ type placements struct {
 	by    map[string]*placement
 	cols  int
 	rows  int
+	// shipped is what the running command has shipped (ship.go).
+	shipped shipping
 }
 
 func newPlacements(s *Session, root js.Value) *placements {
@@ -140,11 +142,12 @@ func (p *placements) place(id string, d placeData) {
 	pl := &placement{id: id, d: d}
 	switch {
 	case d.Widget != "":
-		// The page's own widgets first, then those a program running here
-		// offered from its own process.
+		// The page's own widgets first, then those the program shipped,
+		// then those a program running here offered from its own process.
 		w := widget(d.Widget)
+		html, shipped := p.shipped.done[d.Widget]
 		var offered js.Value
-		if w == nil {
+		if w == nil && !shipped {
 			m, ok := offer.Find(d.Widget)
 			if !ok || p.s.Shell.Source() == "remote" {
 				return // a remote program is not in the tab to offer one
@@ -157,9 +160,12 @@ func (p *placements) place(id string, d placeData) {
 		// Placed before it is filled, so the widget can size itself from
 		// the element (a canvas, say).
 		p.position(pl)
-		if w != nil {
+		switch {
+		case w != nil:
 			pl.unmount = w(pl.el)
-		} else {
+		case shipped:
+			p.mountShipped(pl, html)
+		default:
 			p.mountOffered(pl, offered)
 		}
 	case strings.HasPrefix(d.URL, "https://") || strings.HasPrefix(d.URL, "http://"):

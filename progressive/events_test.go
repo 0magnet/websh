@@ -99,3 +99,43 @@ func TestSequences(t *testing.T) {
 		t.Error("remove/clear")
 	}
 }
+
+// TestShip: a widget goes in chunks that put back together into the
+// document, every one but the last saying more is to come.
+func TestShip(t *testing.T) {
+	doc := strings.Repeat("<p>widget</p>", 1000) // 13000 bytes: five chunks
+	seqs := Ship("w", []byte(doc))
+	if len(seqs) != 5 {
+		t.Fatalf("%d sequences", len(seqs))
+	}
+	var got []byte
+	for i, s := range seqs {
+		body := strings.TrimSuffix(strings.TrimPrefix(s, "\x1b]7337;ship;w;"), "\x1b\\")
+		meta, chunk, _ := strings.Cut(body, ";")
+		m, err := base64.StdEncoding.DecodeString(meta)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var md struct {
+			Kind string `json:"kind"`
+			More bool   `json:"more"`
+		}
+		if err := json.Unmarshal(m, &md); err != nil || md.Kind != "html" || md.More != (i < len(seqs)-1) {
+			t.Errorf("chunk %d meta %s", i, m)
+		}
+		if len(chunk) > 4096 {
+			t.Errorf("chunk %d is %d bytes", i, len(chunk))
+		}
+		b, err := base64.StdEncoding.DecodeString(chunk)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, b...)
+	}
+	if string(got) != doc {
+		t.Error("the document did not survive the trip")
+	}
+	if len(Ship("empty", nil)) != 1 {
+		t.Error("an empty widget is still one sequence")
+	}
+}

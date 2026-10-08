@@ -187,18 +187,35 @@ shows placements, from Discovery.
 
 ### Shipped widgets
 
-**Planned.** A program on another machine cannot offer a function, but it can
+**Built.** A program on another machine cannot offer a function, but it can
 send a widget as content:
 
-    OSC 7337 ; ship ; <name> ; <data> [; <chunk>] ST
+    OSC 7337 ; ship ; <name> ; <data> ; <chunk> ST
 
-`<data>` is `{"kind": "html" | "wasm", "more": bool}`; the chunks are the
-widget itself (an HTML document, or a wasm module with its loader). The host
-runs it in an `<iframe sandbox="allow-scripts">` with no same-origin access:
-it can draw and compute, and it can talk only to the program, through the
-host, by `postMessage`. Placing it by name works as for any widget. This is
-what makes a progressive terminal program work over ssh: the store's globe and card form,
-drawn on the server's behalf in the person's tab.
+`<data>` is `{"kind": "html", "more": bool}`, and the chunks (at most 4096
+base64 bytes each, every one but the last with `"more": true`) are the
+widget: a whole HTML document. Its scripts may fetch and run anything a
+page may, wasm included, from servers that allow it (CORS). The host runs
+it in an `<iframe sandbox="allow-scripts">`: an opaque origin, so it can
+draw and compute but cannot reach the page, its storage or its cookies, and
+the page cannot reach into it. It talks only to the program, over the same
+line as any widget, which the host transfers in; a script the host puts
+first gives the document
+
+    websh.send(value)      // to the program, as a message event
+    websh.onmessage(f)     // f(value) for each post from the program
+
+Placing it by name works as for any widget, with the page's own widgets
+first, then shipped ones, then offered ones. Clicks inside it stay inside
+it, so a shipped widget reports what was done to it by sending. A command
+may ship 8 MB in all; what it shipped goes when it ends. Go:
+`progressive.Ship(name, html)` gives the sequences.
+
+This is what makes a progressive terminal program work over ssh: its
+widgets drawn on its behalf in the person's tab, by whichever machine it
+runs on. `cmd/ttydemo` ships one beside the one it offers. A wasm module
+shipped as its own kind (rather than loaded by a shipped document) is
+planned.
 
 ## Events
 
