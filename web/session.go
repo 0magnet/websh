@@ -138,6 +138,11 @@ type Session struct {
 	page pageState
 	// mirrorS is the running program's mirror (mirror.go).
 	mirrorS mirrorState
+	// notes, sounds and dropListen: notifications (notify.go), the running
+	// program's sounds (sound.go), and whether it takes drop events (drop.go).
+	notes      notifyState
+	sounds     soundState
+	dropListen bool
 	// line is the command line running now.
 	line      string
 	cancelRun context.CancelFunc
@@ -201,6 +206,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	// the page, the window never changes when the terminal's box does.
 	s.Term.AutoFit()
 	s.wireViewer(el)
+	s.wireDrop(el)
 	if !opt.NoWebGL {
 		if err := s.Term.EnableWebGL(); err != nil {
 			js.Global().Get("console").Call("log", "websh: webgl unavailable: "+err.Error())
@@ -433,6 +439,8 @@ func (s *Session) run() {
 		s.fontRestore()
 		s.pageRestore()
 		s.mirrorClear()
+		s.soundsEnd()
+		s.dropListen = false
 		s.page.linkLine = "" // a link opens its program once
 		if s.afterCommand != nil {
 			s.afterCommand()

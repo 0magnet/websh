@@ -21,6 +21,10 @@ type pageState struct {
 	saved bool
 	title string
 	url   string
+	// icon is the favicon link's href before a program set one; iconSet
+	// says it did.
+	icon    string
+	iconSet bool
 	// The link the page was opened by: a command line, and where in it.
 	linkLine string
 	linkPath string
@@ -41,7 +45,55 @@ func (s *Session) pageRestore() {
 	}
 	js.Global().Get("document").Set("title", s.page.title)
 	js.Global().Get("history").Call("replaceState", js.Null(), "", s.page.url)
+	if s.page.iconSet {
+		if s.page.icon == "" {
+			iconLink().Call("remove")
+		} else {
+			iconLink().Set("href", s.page.icon)
+		}
+		s.page.iconSet = false
+	}
 	s.page.saved = false
+}
+
+// setIcon is OSC 7337 icon: the page's favicon while the program runs, from
+// the web or a data: picture.
+func (s *Session) setIcon(enc string) {
+	if !s.running || s.Shell.Source() == "remote" {
+		return
+	}
+	var m struct {
+		URL string `json:"url"`
+	}
+	b, err := base64.StdEncoding.DecodeString(enc)
+	if err != nil || json.Unmarshal(b, &m) != nil || len(m.URL) > 1<<20 {
+		return
+	}
+	u := strings.ToLower(m.URL)
+	if !strings.HasPrefix(u, "https://") && !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "data:image/") {
+		return
+	}
+	s.pageSave()
+	l := iconLink()
+	if !s.page.iconSet {
+		s.page.iconSet, s.page.icon = true, l.Call("getAttribute", "href").String()
+		if l.Call("getAttribute", "href").IsNull() {
+			s.page.icon = ""
+		}
+	}
+	l.Set("href", m.URL)
+}
+
+// iconLink is the page's favicon link, made if it has none.
+func iconLink() js.Value {
+	doc := js.Global().Get("document")
+	l := doc.Call("querySelector", "link[rel~='icon']")
+	if !l.Truthy() {
+		l = doc.Call("createElement", "link")
+		l.Set("rel", "icon")
+		doc.Get("head").Call("append", l)
+	}
+	return l
 }
 
 // setTitle is OSC 0 and OSC 2: the page's title, while the program runs.

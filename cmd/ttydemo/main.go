@@ -25,6 +25,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -83,6 +84,9 @@ func main() {
 			say(seq)
 		}
 	}
+	if progressive.Current().Has("drop") {
+		say(progressive.ListenDrop()) // files dropped on the terminal come as events
+	}
 	// The host's events join the keys in tcell's one queue.
 	if evs := childtty.Events(); evs != nil {
 		go func() {
@@ -100,6 +104,14 @@ func main() {
 		case *progressive.Event:
 			st.event = fmt.Sprintf("%s on %s", ev.Type, ev.ID)
 			switch ev.Type {
+			case "drop":
+				var d struct {
+					Path string `json:"path"`
+					Size int    `json:"size"`
+				}
+				if json.Unmarshal(ev.Data, &d) == nil {
+					st.did = fmt.Sprintf("a file was dropped: %s, %d bytes", d.Path, d.Size)
+				}
 			case "message":
 				var m struct {
 					Pressed bool `json:"pressed"`
@@ -133,6 +145,17 @@ func main() {
 			case "c":
 				say(progressive.Copy(fmt.Sprintf("ttydemo counted %d presses", st.presses+st.shipped)))
 				st.did = "copied a line to the clipboard"
+			case "n":
+				say(progressive.Notify("ttydemo", fmt.Sprintf("%d keys so far", st.keys)))
+				st.did = "sent a notification"
+			case "i":
+				say(progressive.Icon(icon))
+				st.did = "set the page's icon"
+			case "s":
+				for _, seq := range progressive.SoundData("beep", "audio/wav", beep(), 0.3, false) {
+					say(seq)
+				}
+				st.did = "played a beep it made itself"
 			}
 			if ev.Key() == tcell.KeyCtrlC || ev.Str() == "q" {
 				if st.placed {
@@ -176,7 +199,7 @@ func draw(s tcell.Screen, say func(string), st *state) {
 		fmt.Sprintf("keys %d, last %s", st.keys, st.last),
 		host,
 		fmt.Sprintf("presses counted here: offered widget %d, shipped widget %d; last event: %s", st.presses, st.shipped, st.event),
-		"t title · p address (a link back here) · d download · c copy · q or Ctrl+C quits" + didNote(st.did),
+		"t title · p address · d download · c copy · n notify · i icon · s sound · drop a file here · q quits" + didNote(st.did),
 		openedAt(),
 	}
 	for i, l := range lines {
@@ -288,4 +311,39 @@ func openedAt() string {
 		return "opened by a link, at " + p
 	}
 	return ""
+}
+
+// icon is the favicon ttydemo sets: a teal square with a T.
+const icon = "data:image/svg+xml," +
+	"%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230b7285'/%3E" +
+	"%3Ctext x='8' y='12.5' font-size='12' text-anchor='middle' fill='white' font-family='sans-serif'%3ET%3C/text%3E%3C/svg%3E"
+
+// beep is a fifth of a second of 660 Hz, as a WAV file made here: the
+// program brings its own sounds.
+func beep() []byte {
+	const rate, n = 8000, 1600
+	b := make([]byte, 44+n)
+	le := binary.LittleEndian
+	copy(b, "RIFF")
+	le.PutUint32(b[4:], 36+n)
+	copy(b[8:], "WAVEfmt ")
+	le.PutUint32(b[16:], 16)
+	le.PutUint16(b[20:], 1) // PCM
+	le.PutUint16(b[22:], 1) // mono
+	le.PutUint32(b[24:], rate)
+	le.PutUint32(b[28:], rate)
+	le.PutUint16(b[32:], 1)
+	le.PutUint16(b[34:], 8)
+	copy(b[36:], "data")
+	le.PutUint32(b[40:], n)
+	for i := range n {
+		v := 128.0
+		if (i*660*2/rate)%2 == 0 { // a square wave
+			v += 40
+		} else {
+			v -= 40
+		}
+		b[44+i] = byte(v)
+	}
+	return b
 }

@@ -208,3 +208,29 @@ func TestMirror(t *testing.T) {
 		t.Errorf("empty: %q", got)
 	}
 }
+
+// TestMedia: notification, icon, sound and drop sequences.
+func TestMedia(t *testing.T) {
+	if Notify("t", "b") != "\x1b]777;notify;t;b\x1b\\" {
+		t.Error("notify")
+	}
+	if ListenDrop() != "\x1b]7337;listen;drop\x1b\\" {
+		t.Error("listen")
+	}
+	if got := len(SoundData("beep", "audio/wav", make([]byte, 7000), 0.5, false)); got != 3 {
+		t.Errorf("sound data in %d chunks", got)
+	}
+	for _, s := range []string{Icon("data:image/png;base64,AA"), Sound("a", "https://x/a.mp3", -1, true), SoundStop("a")} {
+		if !strings.HasPrefix(s, "\x1b]7337;") {
+			t.Errorf("%q", s)
+		}
+	}
+	// A drop arrives as an event.
+	r, evs := Filter(strings.NewReader(EventSeq("drop", &Event{Type: "drop", Data: json.RawMessage(`{"path":"/home/user/Downloads/a.txt","size":3}`)})))
+	if _, err := io.ReadAll(r); err != nil {
+		t.Fatal(err)
+	}
+	if e := <-evs; e.ID != "drop" || e.Type != "drop" || !strings.Contains(string(e.Data), "a.txt") {
+		t.Errorf("%+v", e)
+	}
+}

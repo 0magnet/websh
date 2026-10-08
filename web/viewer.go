@@ -49,6 +49,18 @@ func (s *Session) wireViewer(el js.Value) {
 		s.download(data)
 		return true
 	})
+	s.Term.Core.InputHandler().RegisterOscHandler(9, func(data string) bool {
+		s.osc9(data)
+		return true
+	})
+	s.Term.Core.InputHandler().RegisterOscHandler(777, func(data string) bool {
+		s.osc777(data)
+		return true
+	})
+	s.Term.Core.InputHandler().RegisterOscHandler(99, func(data string) bool {
+		s.osc99(data)
+		return true
+	})
 	s.Term.Core.InputHandler().RegisterOscHandler(52, func(data string) bool {
 		s.clipboard(data)
 		return true
@@ -64,6 +76,14 @@ func (s *Session) wireViewer(el js.Value) {
 			var d placeData
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
 				p.place(id, d)
+			}
+		case "sound":
+			s.sound(arg)
+		case "icon":
+			s.setIcon(arg)
+		case "listen":
+			if arg == "drop" {
+				s.dropListen = s.running
 			}
 		case "mirror":
 			s.mirror(arg)
