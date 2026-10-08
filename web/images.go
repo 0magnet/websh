@@ -173,6 +173,12 @@ func (s *Session) kitty(data string) {
 			return
 		}
 		if id != 0 {
+			// An image sent again under its id replaces the old one, and
+			// the old one's placements go with it, as in kitty.
+			for _, h := range st.shown[id] {
+				s.Term.RemoveImage(h)
+			}
+			delete(st.shown, id)
 			if st.stored == nil {
 				st.stored = map[uint32]kittyImage{}
 			}
