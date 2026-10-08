@@ -20,7 +20,7 @@ func (s *Session) caps(p *placements) *progressive.Caps {
 		c.Cell.H = screen.Get("clientHeight").Float() / float64(c.Rows)
 	}
 	c.DPR = js.Global().Get("devicePixelRatio").Float()
-	c.Features = []string{"place", "place.input", "event", "post", "ship", "download", "clipboard", "mirror", "notify", "sound", "drop", "image"}
+	c.Features = []string{"place", "place.input", "event", "post", "ship", "download", "clipboard", "mirror", "notify", "sound", "drop", "image", "kitty-graphics"}
 	if c.Trust != "remote" {
 		c.Features = append(c.Features, "widget.offer", "font", "title", "page", "icon")
 	}

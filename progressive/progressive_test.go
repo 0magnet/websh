@@ -57,7 +57,7 @@ func TestProbe(t *testing.T) {
 					t.Fatal(rerr)
 				}
 			}
-			if tt.wrote.String() != Query+"\x1b[c" {
+			if tt.wrote.String() != Query+kittyQuery+xtversion+"\x1b[c" {
 				t.Errorf("wrote %q", tt.wrote.String())
 			}
 			if (caps != nil) != tc.caps {
@@ -81,3 +81,43 @@ func TestProbe(t *testing.T) {
 type blocking struct{}
 
 func (blocking) Read([]byte) (int, error) { select {} }
+
+// TestProbeATerminal: a terminal that is not websh, asked the same way, is
+// found for what it can do itself: kitty graphics, sixel, its name.
+func TestProbeATerminal(t *testing.T) {
+	for name, tc := range map[string]struct {
+		answer string
+		host   string
+		feats  []string
+	}{
+		"kitty":       {"\x1b_Gi=31;OK\x1b\\\x1bP>|kitty(0.35.2)\x1b\\\x1b[?62;c", "kitty(0.35.2)", []string{"kitty-graphics"}},
+		"sixel":       {"\x1bP>|XTerm(390)\x1b\\\x1b[?63;1;2;4;6;9;15;22c", "XTerm(390)", []string{"sixel"}},
+		"no graphics": {"\x1b_Gi=31;ENOTSUPPORTED:x\x1b\\\x1b[?1;2c", "", nil},
+		"just a name": {"\x1bP>|foot(1.16)\x1b\\\x1b[?62;22c", "foot(1.16)", nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			Set(nil)
+			tt := &term{answer: slow{strings.NewReader(tc.answer)}}
+			caps, in, err := Probe(tt, tt, 200*time.Millisecond)
+			if err != nil {
+				t.Fatal(err)
+			}
+			rest, err := io.ReadAll(in)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(rest) != 0 {
+				t.Errorf("left %q", rest)
+			}
+			if tc.host == "" && len(tc.feats) == 0 {
+				if caps != nil {
+					t.Errorf("caps %+v for a plain terminal", caps)
+				}
+				return
+			}
+			if caps == nil || caps.Host != tc.host || strings.Join(caps.Features, ",") != strings.Join(tc.feats, ",") {
+				t.Errorf("caps %+v", caps)
+			}
+		})
+	}
+}

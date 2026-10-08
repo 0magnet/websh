@@ -49,6 +49,7 @@ build_demo() {
 	mkdir -p docs/bin
 	tinygo build -o docs/bin/ttydemo.wasm -target wasm -no-debug ./cmd/ttydemo
 	tinygo build -o docs/bin/wasmwidget.wasm -target wasm -no-debug ./cmd/wasmwidget
+	tinygo build -o docs/bin/progcheck.wasm -target wasm -no-debug ./cmd/progcheck
 }
 
 case "${1:-both}" in
