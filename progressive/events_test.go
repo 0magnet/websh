@@ -197,3 +197,14 @@ func TestPageSequences(t *testing.T) {
 		t.Error("page")
 	}
 }
+
+// TestMirror: a mirror goes in chunks; an empty one is one sequence, which
+// withdraws it.
+func TestMirror(t *testing.T) {
+	if got := len(Mirror([]byte(strings.Repeat("<li>x</li>", 700)))); got != 3 {
+		t.Errorf("%d sequences for 7000 bytes", got)
+	}
+	if got := Mirror(nil); len(got) != 1 || !strings.HasPrefix(got[0], "\x1b]7337;mirror;") {
+		t.Errorf("empty: %q", got)
+	}
+}

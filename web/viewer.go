@@ -65,6 +65,8 @@ func (s *Session) wireViewer(el js.Value) {
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
 				p.place(id, d)
 			}
+		case "mirror":
+			s.mirror(arg)
 		case "page":
 			s.setPage(arg)
 		case "font":

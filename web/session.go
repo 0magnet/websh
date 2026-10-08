@@ -136,6 +136,8 @@ type Session struct {
 	// page is the page's title and address before a program changed them,
 	// and the link the page was opened by (page.go).
 	page pageState
+	// mirrorS is the running program's mirror (mirror.go).
+	mirrorS mirrorState
 	// line is the command line running now.
 	line      string
 	cancelRun context.CancelFunc
@@ -430,6 +432,7 @@ func (s *Session) run() {
 		}
 		s.fontRestore()
 		s.pageRestore()
+		s.mirrorClear()
 		s.page.linkLine = "" // a link opens its program once
 		if s.afterCommand != nil {
 			s.afterCommand()

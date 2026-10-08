@@ -134,8 +134,8 @@ the terminal; `progressive.Current` has the answer.
 
 `features` lists only what the host does now, for this program's trust. So
 far: `place` (images), `place.input`, `event`, `post`, `ship`, `download`,
-`clipboard`, and `widget.offer`, `font`, `title`, `page` (not for remote
-output).
+`clipboard`, `mirror`, and `widget.offer`, `font`, `title`, `page` (not for
+remote output).
 
 Standard queries a program may also use, answered by websh's terminal
 (xterm-go):
@@ -335,16 +335,36 @@ too, as magnetosphere.net does (Accessibility and search).
 
 ## Accessibility and search
 
-**Planned.** Cells are not semantic: a screen reader reads a grid of
-characters, and a search engine sees nothing at all. A program can publish
+**Built** (the mirror). Cells are not semantic: a screen reader reads a grid
+of characters, and a search engine sees nothing at all. A program publishes
 what it shows as structure alongside the cells:
 
-    OSC 7337 ; mirror ; <data> ST
+    OSC 7337 ; mirror ; <data> ; <chunk> ST     (repeated while "more": true)
 
-`<data>` carries HTML (headings, lists, links, a table), which the host keeps
-off-screen and live for assistive technology, and, for a page program, in
-the document for indexing. This is how a TUI page meets the bar the web sets
-for everything else; without it, it should not be anyone's only interface.
+`<data>` is `{"more": bool}` and the chunks an HTML fragment — headings,
+lists, links, a table — at most 1 MB; an empty one withdraws it. The host
+keeps it in a region beside the terminal that assistive technology reads
+(`role=region`, `aria-live=polite`) and the screen does not show, and
+withdraws it when the program exits. Send it again as what is shown
+changes. Go: `progressive.Mirror(html)`.
+
+It lives in the page itself, not in a sandbox, so the host rebuilds it
+keeping only plain structure: a fixed set of structural tags; `href`,
+`src`, `alt`, `title`, `lang`, table spans, `role` and `aria-*`; links only
+to http(s), to a path or fragment of the page, or to mail, opened in a new
+tab; pictures only from http(s). Scripts, styles, forms, frames and
+embedded media are dropped with what they hold; an unknown element is
+dropped and its text kept; every event handler goes. So any program may
+send one, a remote one too.
+
+`cmd/ttydemo` mirrors its counts; the store mirrors the page it shows — the
+product, the list, with links to the site's own pages.
+
+Search engines do not run a page's programs, so the mirror is for people,
+not crawlers: a site that wants to be found serves the same pages as HTML
+too, at the same paths a program announces (The page). This is how a TUI
+page meets the bar the web sets for everything else; without it, it
+should not be anyone's only interface.
 
 ## Replies are not keys
 

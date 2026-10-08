@@ -27,6 +27,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"os"
 	"syscall/js"
@@ -48,6 +49,7 @@ type state struct {
 	shipped int
 	event   string
 	did     string // what the last page key did
+	mirror  string // the mirror last sent
 }
 
 func main() {
@@ -207,6 +209,19 @@ func draw(s tcell.Screen, say func(string), st *state) {
 	}
 	if progressive.Current().Has("ship") && sw > 2 && bh > 2 {
 		say(progressive.Place("shipped", progressive.Placement{Row: by, Col: sx, W: sw, H: bh, Widget: "ttydemo-shipped", Input: true, Events: true}))
+	}
+	// What the screen shows, as structure, for a screen reader.
+	if progressive.Current().Has("mirror") {
+		m := fmt.Sprintf("<h1>ttydemo</h1><p>A progressive terminal program in a %dx%d terminal.</p>"+
+			"<ul><li>Keys pressed: %d, the last %s</li><li>Presses counted: offered widget %d, shipped widget %d</li>"+
+			"<li>Last event: %s</li></ul><p>Keys: t title, p address, d download, c copy, q quit.</p>",
+			w, h, st.keys, html.EscapeString(st.last), st.presses, st.shipped, html.EscapeString(st.event))
+		if m != st.mirror {
+			st.mirror = m
+			for _, seq := range progressive.Mirror([]byte(m)) {
+				say(seq)
+			}
+		}
 	}
 }
 
