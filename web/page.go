@@ -175,8 +175,11 @@ func (s *Session) download(data string) {
 		k, v, _ := strings.Cut(kv, "=")
 		args[k] = v
 	}
-	if args["inline"] == "1" {
-		return // a picture to show in place; not yet (PROTOCOL.md)
+	if args["inline"] == "1" { // a picture in the text (images.go)
+		if b, err := base64.StdEncoding.DecodeString(body); err == nil && len(b) <= imageLimit {
+			s.iterm2Inline(args, b)
+		}
+		return
 	}
 	nb, err := base64.StdEncoding.DecodeString(args["name"])
 	name := strings.Map(func(r rune) rune {

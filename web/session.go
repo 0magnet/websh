@@ -141,6 +141,7 @@ type Session struct {
 	// notes, sounds and dropListen: notifications (notify.go), the running
 	// program's sounds (sound.go), and whether it takes drop events (drop.go).
 	notes      notifyState
+	images     imageState
 	sounds     soundState
 	dropListen bool
 	// line is the command line running now.

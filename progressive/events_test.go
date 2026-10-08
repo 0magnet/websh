@@ -234,3 +234,10 @@ func TestMedia(t *testing.T) {
 		t.Errorf("%+v", e)
 	}
 }
+
+// TestImage: an inline picture is iTerm2's OSC 1337 File= with inline=1.
+func TestImage(t *testing.T) {
+	if got := Image("a.png", []byte("hi"), "40", ""); got != "\x1b]1337;File=name=YS5wbmc=;size=2;inline=1;width=40:aGk=\x07" {
+		t.Errorf("%q", got)
+	}
+}

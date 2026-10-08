@@ -53,3 +53,21 @@ func SoundStop(id string) string {
 // events (ID "drop", Type "drop", Data {"path", "name", "size", "type"})
 // rather than their paths typed. It lasts until the program exits.
 func ListenDrop() string { return osc("listen;drop") }
+
+// Image is the sequence showing a picture in the text at the cursor, as
+// iTerm2's inline images do (OSC 1337 File= inline=1), which websh and
+// other terminals that show pictures understand. width and height are each
+// "N" cells, "Npx", "N%" of the terminal or "auto" ("" is auto); the
+// picture keeps its shape. It scrolls with the text and stays in the
+// scrollback.
+func Image(name string, data []byte, width, height string) string {
+	s := "\x1b]1337;File=name=" + base64.StdEncoding.EncodeToString([]byte(name)) +
+		";size=" + itoa(len(data)) + ";inline=1"
+	if width != "" {
+		s += ";width=" + width
+	}
+	if height != "" {
+		s += ";height=" + height
+	}
+	return s + ":" + base64.StdEncoding.EncodeToString(data) + "\x07"
+}

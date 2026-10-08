@@ -49,6 +49,10 @@ func (s *Session) wireViewer(el js.Value) {
 		s.download(data)
 		return true
 	})
+	s.Term.Core.InputHandler().SetApcHandler(func(data string) bool {
+		s.kitty(data) // kitty's graphics protocol (images.go)
+		return true
+	})
 	s.Term.Core.InputHandler().RegisterOscHandler(9, func(data string) bool {
 		s.osc9(data)
 		return true

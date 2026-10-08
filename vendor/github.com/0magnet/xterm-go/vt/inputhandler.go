@@ -602,6 +602,12 @@ func (h *InputHandler) RegisterOscHandler(ident int, callback func(data string) 
 	h.parser.RegisterOscHandler(ident, NewOscHandler(callback))
 }
 
+// SetApcHandler sets what takes an APC string (ESC _ ... ESC \), whole: the
+// transport of kitty's graphics protocol. Without one they are dropped.
+func (h *InputHandler) SetApcHandler(callback func(data string) bool) {
+	h.parser.SetApcHandler(callback)
+}
+
 // Bell rings the bell (BEL).
 func (h *InputHandler) Bell() bool {
 	if h.OnRequestBell != nil {

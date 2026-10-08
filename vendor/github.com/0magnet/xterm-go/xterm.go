@@ -101,6 +101,10 @@ type Terminal struct {
 	menu     *contextMenu
 
 	cellW, cellH float64
+	// images are the inline pictures, in imgLayer (images.go).
+	images      []*inlineImage
+	imgLayer    js.Value
+	imagesWired bool
 
 	keyDownHandled       bool
 	renderQueued         bool
@@ -759,6 +763,7 @@ func (t *Terminal) render() {
 		return
 	}
 	t.renderer.renderRows(start, end)
+	t.placeImages()
 }
 
 // domRenderer is the default renderer: rows as divs of styled spans.

@@ -134,7 +134,7 @@ the terminal; `progressive.Current` has the answer.
 
 `features` lists only what the host does now, for this program's trust. So
 far: `place` (images), `place.input`, `event`, `post`, `ship`, `download`,
-`clipboard`, `mirror`, `notify`, `sound`, `drop`, and `widget.offer`, `font`,
+`clipboard`, `mirror`, `notify`, `sound`, `drop`, `image`, and `widget.offer`, `font`,
 `title`, `page`, `icon` (not for remote output).
 
 Standard queries a program may also use, answered by websh's terminal
@@ -328,7 +328,7 @@ too, as magnetosphere.net does (Accessibility and search).
 | Clipboard write | OSC 52 (`progressive.Copy`); reading is refused | built; remote asks the person |
 | Downloads offered | iTerm2 OSC 1337 `File=` with `inline=0` (`progressive.Download`), one sequence, under 10 MB | built; remote asks the person |
 | Notifications | OSC 9 (iTerm2; ConEmu's numbered codes ignored), OSC 777 `notify;title;body` (`progressive.Notify`), kitty OSC 99 (chunks, base64, title and body) | built: the system's when the tab is out of sight and allowed, else a note over the terminal; remote output one per 3 s |
-| Inline images | iTerm2 OSC 1337 `File=` (inline=1), kitty graphics | planned |
+| Inline images | iTerm2 OSC 1337 `File=` with `inline=1` (`width`/`height` in cells, `px`, `%` or `auto`; `preserveAspectRatio`; `progressive.Image`, the `imgcat` applet), and kitty's graphics protocol (APC `G`: transmit, put, transmit-and-put, delete, query; PNG, raw RGB(A), zlib; direct transmission in chunks; `c`/`r` cells, `C=1`, ids, quiet; files and shared memory answered EBADF). A picture is laid at the cursor, which moves past it; it scrolls with its line, stays in the scrollback, and goes with its line, an erase of its part of the buffer, or a reset | built |
 | Files dropped onto the terminal | saved in `~/Downloads` (the shell's filesystem and the page's), its path typed as a desktop terminal does; a program that sent `OSC 7337 ; listen ; drop` (`progressive.ListenDrop`) gets an event instead, ID and type `drop`, data `{path, name, size, type}`; 64 MB each | built |
 | Sound | `OSC 7337 ; sound ; <data> [; <chunk>] ST`, `{id, url \| type, volume, loop, stop, more}`: a URL, or bytes in chunks (`progressive.Sound`, `SoundData`, `SoundStop`); the same id replaces, every sound stops when the program exits; 8 MB | built |
 | Focus in/out | mode 1004 (`CSI I`, `CSI O`) | built |
