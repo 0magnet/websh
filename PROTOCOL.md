@@ -19,6 +19,10 @@ ordinary TUI in any terminal and a richer one where the host can do more; the
 richer parts are only ever additions, and the cells beneath them are always
 drawn. Nothing here requires a second, "web" version of a program.
 
+This is **version 1** of the protocol: the `"v"` of the Discovery reply. A
+later version adds; a program reads the version and the features, and uses
+what is offered.
+
 Status markers: **built** (in websh now), **next** (being built), **planned**
 (designed here, not yet built).
 
@@ -393,6 +397,40 @@ as typing, unanswered OSC 10/11 and CSI 14/16 t, CSI t
 reports switched off, focus events never sent, no XTVERSION, no kitty keyboard
 protocol, APC strings (kitty graphics' transport) dropped by the parser, and
 non-wasm files handed to the process layer to fail compiling.
+
+## Implementing it
+
+A terminal or host that is not websh can speak as much of this as it likes;
+a program uses what Discovery says is there.
+
+**The least worth doing** is Discovery and image placements: answer
+`OSC 7337 ; caps ?` (before your DA1 reply) with `{"v": 1, "host": ...,
+"trust": ..., "features": ["place"], "cell": {...}}`, and lay `url` placements
+over their cells, taking them away on `remove`, `clear` and when the program
+exits. Every other feature is independent of the rest, and one not listed is
+one a program will not ask for.
+
+**Trust is the host's.** Decide which features a program's output gets by
+where it comes from, and list only those; ignore requests for the rest.
+
+**Checking.** `progcheck` (cmd/progcheck) runs in any terminal and reports what
+it answers — Discovery and the features it lists, kitty keyboard and
+graphics, sixel, pointer shapes, sizes, colors and modes. The Go package
+`progressive` is a reference for the program side: Probe, the sequences, and
+Filter for events.
+
+**The number.** OSC 7337 is not yet in a registry. The draft below is for
+the terminal working group's proposed one
+(gitlab.freedesktop.org/terminal-wg/specifications#10):
+
+> **OSC 7337 — progressive terminal.** A program asks its host for more than
+> cells over its output: `OSC 7337 ; <verb> [; <id>] [; <data>] ST`, data base64
+> JSON, replies on input in the same form. Verbs: `caps?` (discovery),
+> `place`/`remove`/`clear` (images and widgets over cells), `ship` (a widget
+> sent as content, run sandboxed), `post`/`event` (messages between a program and
+> its widgets), `font`, `page`, `icon`, `sound`, `listen`, `mirror` (an accessible
+> rendition), `view`/`open`/`close`. Terminals that do not implement it ignore it.
+> Specification: https://github.com/0magnet/websh/blob/main/PROTOCOL.md.
 
 ## Prior art
 
