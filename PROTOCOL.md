@@ -88,7 +88,7 @@ The host gives every byte of output one of four sources:
 | Downloads offered, files dropped | yes | yes | ask the person |
 | Notifications | yes | yes | yes, rate-limited |
 | Clipboard write (OSC 52) | yes | yes | ask the person |
-| Clipboard read | no | no | no |
+| Clipboard read (OSC 52 `?`) | ask the person | ask the person | ask the person |
 
 The reply to Discovery says which source the host saw (`"trust"`), so a
 program does not ask for what it will not get.
@@ -334,7 +334,7 @@ too, as magnetosphere.net does (Accessibility and search).
 | What | Protocol | Status |
 |---|---|---|
 | Hyperlinks | OSC 8 | built (xterm-go) |
-| Clipboard write | OSC 52 (`progressive.Copy`); reading is refused | built; remote asks the person |
+| Clipboard | OSC 52 write (`progressive.Copy`); OSC 52 `?` read, answered only if the person allows it, each time | built; a remote write asks the person too |
 | Downloads offered | iTerm2 OSC 1337 `File=` with `inline=0` (`progressive.Download`), one sequence, under 10 MB | built; remote asks the person |
 | Notifications | OSC 9 (iTerm2; ConEmu's numbered codes ignored), OSC 777 `notify;title;body` (`progressive.Notify`), kitty OSC 99 (chunks, base64, title and body) | built: the system's when the tab is out of sight and allowed, else a note over the terminal; remote output one per 3 s |
 | Inline images | iTerm2 OSC 1337 `File=` with `inline=1` (`width`/`height` in cells, `px`, `%` or `auto`; `preserveAspectRatio`; `progressive.Image`, the `imgcat` applet), and kitty's graphics protocol (APC `G`: transmit, put, transmit-and-put, delete, query; PNG, raw RGB(A), zlib; direct transmission in chunks; `c`/`r` cells, `C=1`, ids, quiet; files and shared memory answered EBADF). A picture is laid at the cursor, which moves past it; it scrolls with its line, stays in the scrollback, and goes with its line, an erase of its part of the buffer, or a reset | built |

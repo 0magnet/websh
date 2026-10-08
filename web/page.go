@@ -211,11 +211,16 @@ func (s *Session) download(data string) {
 	})
 }
 
-// clipboard is OSC 52: the program fills the clipboard. Reading it is
-// refused: what the person copied elsewhere is not a program's to see.
+// clipboard is OSC 52: the program fills the clipboard, or asks what is on
+// it. What the person copied elsewhere is theirs, so a program reads it only
+// when they say yes, each time; the browser may ask as well.
 func (s *Session) clipboard(data string) {
-	_, enc, ok := strings.Cut(data, ";")
-	if !ok || enc == "?" {
+	sel, enc, ok := strings.Cut(data, ";")
+	if !ok {
+		return
+	}
+	if enc == "?" {
+		s.clipboardRead(sel)
 		return
 	}
 	b, err := base64.StdEncoding.DecodeString(enc)
@@ -241,4 +246,33 @@ func once(f func(), use func(js.Value)) {
 		return nil
 	})
 	use(fn.Value)
+}
+
+// clipboardRead answers OSC 52's query, if the person allows it: the text
+// on the clipboard, as OSC 52 ; <selection> ; <base64>. A refusal is
+// answered with nothing, as a terminal that does not allow reading does.
+func (s *Session) clipboardRead(sel string) {
+	who := "The program in the terminal"
+	if s.Shell.Source() == "remote" {
+		who = "A program on another machine"
+	}
+	cb := js.Global().Get("navigator").Get("clipboard")
+	if !cb.Truthy() || !js.Global().Call("confirm", who+" asks to read your clipboard. Allow it this once?").Bool() {
+		return
+	}
+	cmd := s.cmds
+	var ok, fail js.Func
+	release := func() { ok.Release(); fail.Release() }
+	ok = js.FuncOf(func(_ js.Value, args []js.Value) any {
+		defer release()
+		if s.running && s.cmds == cmd {
+			s.Term.Core.Input("\x1b]52;"+sel+";"+base64.StdEncoding.EncodeToString([]byte(args[0].String()))+"\x1b\\", false)
+		}
+		return nil
+	})
+	fail = js.FuncOf(func(js.Value, []js.Value) any {
+		defer release()
+		return nil
+	})
+	cb.Call("readText").Call("then", ok, fail)
 }
