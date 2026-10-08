@@ -117,7 +117,10 @@ func main() {
 					Pressed bool `json:"pressed"`
 				}
 				if json.Unmarshal(ev.Data, &m) == nil && m.Pressed {
-					if ev.ID == "shipped" {
+					if ev.ID == "wasm" {
+						st.shipped++
+						say(progressive.Post("wasm", map[string]int{"count": st.shipped}))
+					} else if ev.ID == "shipped" {
 						st.shipped++
 						say(progressive.Post("shipped", map[string]int{"count": st.shipped}))
 					} else {
@@ -151,6 +154,8 @@ func main() {
 			case "i":
 				say(progressive.Icon(icon))
 				st.did = "set the page's icon"
+			case "w":
+				st.did = shipWasm(say)
 			case "s":
 				for _, seq := range progressive.SoundData("beep", "audio/wav", beep(), 0.3, false) {
 					say(seq)
@@ -199,7 +204,7 @@ func draw(s tcell.Screen, say func(string), st *state) {
 		fmt.Sprintf("keys %d, last %s", st.keys, st.last),
 		host,
 		fmt.Sprintf("presses counted here: offered widget %d, shipped widget %d; last event: %s", st.presses, st.shipped, st.event),
-		"t title · p address · d download · c copy · n notify · i icon · s sound · drop a file here · q quits" + didNote(st.did),
+		"t title · p address · d download · c copy · n notify · i icon · s sound · w wasm widget · drop a file · q quits" + didNote(st.did),
 		openedAt(),
 	}
 	for i, l := range lines {
@@ -346,4 +351,36 @@ func beep() []byte {
 		b[44+i] = byte(v)
 	}
 	return b
+}
+
+// shipWasm fetches wasmwidget from where this program came from and ships
+// it — Go, run in a sandbox the host makes — over the box below the others.
+func shipWasm(say func(string)) string {
+	if !progressive.Current().Has("ship") {
+		return "the host takes no shipped widgets"
+	}
+	url := js.Global().Get("location").Get("origin").String() + "/bin/wasmwidget.wasm"
+	done := make(chan []byte, 1)
+	ok := js.FuncOf(func(_ js.Value, args []js.Value) any {
+		buf := js.Global().Get("Uint8Array").New(args[0])
+		b := make([]byte, buf.Length())
+		js.CopyBytesToGo(b, buf)
+		done <- b
+		return nil
+	})
+	fail := js.FuncOf(func(js.Value, []js.Value) any { done <- nil; return nil })
+	defer ok.Release()
+	defer fail.Release()
+	js.Global().Call("fetch", url).Call("then", js.FuncOf(func(_ js.Value, args []js.Value) any {
+		return args[0].Call("arrayBuffer")
+	})).Call("then", ok, fail)
+	module := <-done
+	if len(module) == 0 {
+		return "could not fetch " + url
+	}
+	for _, seq := range progressive.ShipWasm("ttydemo-wasm", module) {
+		say(seq)
+	}
+	say(progressive.Place("wasm", progressive.Placement{Row: 18, Col: 2, W: 50, H: 10, Widget: "ttydemo-wasm", Input: true, Events: true}))
+	return fmt.Sprintf("shipped wasmwidget, %d bytes of Go", len(module))
 }

@@ -241,3 +241,14 @@ func TestImage(t *testing.T) {
 		t.Errorf("%q", got)
 	}
 }
+
+// TestShipWasm: a wasm module ships as its own kind.
+func TestShipWasm(t *testing.T) {
+	seqs := ShipWasm("w", []byte("\x00asm\x01\x00\x00\x00"))
+	body := strings.TrimSuffix(strings.TrimPrefix(seqs[0], "\x1b]7337;ship;w;"), "\x1b\\")
+	meta, _, _ := strings.Cut(body, ";")
+	m, err := base64.StdEncoding.DecodeString(meta)
+	if err != nil || !strings.Contains(string(m), `"kind":"wasm"`) {
+		t.Errorf("meta %s, %v", m, err)
+	}
+}

@@ -193,9 +193,10 @@ send a widget as content:
 
     OSC 7337 ; ship ; <name> ; <data> ; <chunk> ST
 
-`<data>` is `{"kind": "html", "more": bool}`, and the chunks (at most 4096
-base64 bytes each, every one but the last with `"more": true`) are the
-widget: a whole HTML document. Its scripts may fetch and run anything a
+`<data>` is `{"kind": "html" | "wasm", "more": bool}`, and the chunks (at
+most 4096 base64 bytes each, every one but the last with `"more": true`) are
+the widget: a whole HTML document, or a wasm module built by Go or TinyGo
+for js/wasm. Its scripts may fetch and run anything a
 page may, wasm included, from servers that allow it (CORS). The host runs
 it in an `<iframe sandbox="allow-scripts">`: an opaque origin, so it can
 draw and compute but cannot reach the page, its storage or its cookies, and
@@ -214,9 +215,17 @@ may ship 8 MB in all; what it shipped goes when it ends. Go:
 
 This is what makes a progressive terminal program work over ssh: its
 widgets drawn on its behalf in the person's tab, by whichever machine it
-runs on. `cmd/ttydemo` ships one beside the one it offers. A wasm module
-shipped as its own kind (rather than loaded by a shipped document) is
-planned.
+runs on. `cmd/ttydemo` ships one beside the one it offers.
+
+**A wasm module** runs in a document of the host's making: the loader of the
+toolchain that built it (one built by TinyGo imports WASI, one built by Go
+does not, and the host loads the matching `wasm_exec.js` from its own
+address), and a runner the module is handed to once the line is in. The
+module draws in that document as any Go program in a browser does, and talks
+over the same line (Go: package `widget/inside`, `Send` and `OnMessage`). Go:
+`progressive.ShipWasm(name, module)`. `cmd/wasmwidget` is one — an animation
+computed in Go and a button — which `ttydemo` ships with its `w` key: a
+program can ship the widget it draws its page with, written once, in Go.
 
 ## Events
 

@@ -44,6 +44,7 @@ bottle_js() {
 build_demo() {
 	mkdir -p docs/bin
 	tinygo build -o docs/bin/ttydemo.wasm -target wasm -no-debug ./cmd/ttydemo
+	tinygo build -o docs/bin/wasmwidget.wasm -target wasm -no-debug ./cmd/wasmwidget
 }
 
 case "${1:-both}" in
