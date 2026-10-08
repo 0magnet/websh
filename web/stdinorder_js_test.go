@@ -104,3 +104,29 @@ func TestUnreadRepliesDoNotOutliveTheirCommand(t *testing.T) {
 		t.Errorf("wake read %d, %v", n, err)
 	}
 }
+
+// Ctrl+C ends the read the command is waiting in; one for a command that
+// has ended does not reach the next.
+func TestInterruptEndsTheRead(t *testing.T) {
+	q := newInQueue()
+	q.next()
+	q.push(inItem{interrupt: true}) // command 1's Ctrl+C, never read
+	q.next()
+	q.push(inItem{b: []byte("x")})
+	buf := make([]byte, 4)
+	if n, err := q.Read(buf); n != 1 || err != nil {
+		t.Fatalf("command 2 read %d, %v", n, err)
+	}
+	done := make(chan error, 1)
+	go func() { _, err := q.Read(buf); done <- err }()
+	q.push(inItem{interrupt: true})
+	if err := <-done; err != io.EOF {
+		t.Errorf("interrupted read: %v", err)
+	}
+}
+
+func TestEchoCtl(t *testing.T) {
+	if got := echoCtl("a\x1b[A\x04\tb\r"); got != "a^[[A^D\tb\r\n" {
+		t.Errorf("%q", got)
+	}
+}
