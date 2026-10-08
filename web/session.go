@@ -233,6 +233,10 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	sh.RawMode = func(on bool) { s.rawInput = on }
 	sh.Exec = opt.Exec
 	sh.Size = func() (int, int) { return s.Term.Core.Cols(), s.Term.Core.Rows() }
+	sh.IsTerminal = func(w io.Writer) bool {
+		tw, ok := w.(termWriter)
+		return ok && tw.term == s.Term
+	}
 	// An empty write: the pipe hands it to a pending Read as zero bytes.
 	sh.WakeStdin = func() {
 		select {

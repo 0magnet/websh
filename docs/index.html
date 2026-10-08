@@ -41,6 +41,13 @@
 <script src="jsfs.js"></script>
 <script src="vnet.js"></script>
 <script src="wasm_exec.js"></script>
+<script src="proc.js"></script>
+<script>
+  // Programs run from the filesystem: TinyGo's loader is this page's own,
+  // and Go's is fetched for a program Go built.
+  proc.assets.wasmExecGo = "go/wasm_exec.js";
+  proc.assets.wasmExecTinyGo = "wasm_exec.js";
+</script>
 <script>
   const go = new Go();
   WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)

@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"syscall/js"
+
+	offer "github.com/0magnet/websh/widget"
 )
 
 // Placements: a program in the terminal lays an image, or a widget the page
@@ -26,7 +28,8 @@ import (
 // the mouse and the keys still go to the program — unless it asks with
 // "input": true: then the mouse over it is its own (a widget turned or zoomed
 // by hand), and the program keeps the keys. What a command placed is taken
-// away when it ends.
+// away when it ends. A widget is the page's (RegisterWidget) or one a
+// program run from the filesystem offered (package widget).
 
 // A Widget makes a widget's elements in el, the placement it fills, and
 // returns what to do when the placement is taken away (nil for nothing).
@@ -127,9 +130,16 @@ func (p *placements) place(id string, d placeData) {
 	pl := &placement{d: d}
 	switch {
 	case d.Widget != "":
+		// The page's own widgets first, then those a program running here
+		// offered from its own process.
 		w := widget(d.Widget)
+		var offered js.Value
 		if w == nil {
-			return
+			m, ok := offer.Find(d.Widget)
+			if !ok {
+				return
+			}
+			offered = m
 		}
 		pl.el = doc.Call("createElement", "div")
 		pl.el.Get("style").Set("cssText", "position:absolute;overflow:hidden")
@@ -137,7 +147,11 @@ func (p *placements) place(id string, d placeData) {
 		// Placed before it is filled, so the widget can size itself from
 		// the element (a canvas, say).
 		p.position(pl)
-		pl.unmount = w(pl.el)
+		if w != nil {
+			pl.unmount = w(pl.el)
+		} else {
+			mountOffered(pl, offered)
+		}
 	case strings.HasPrefix(d.URL, "https://") || strings.HasPrefix(d.URL, "http://"):
 		pl.el = doc.Call("createElement", "img")
 		fit := "contain"
@@ -200,6 +214,26 @@ func (p *placements) remove(id string) {
 		f.Release()
 	}
 	pl.el.Call("remove")
+}
+
+// mountOffered fills pl with a widget a program offered. Its mount and
+// unmount belong to another Go runtime, so they run on microtasks of their
+// own (package widget), never from this one's stack; a placement taken away
+// before its widget is up has it taken down as soon as it is.
+func mountOffered(pl *placement, mount js.Value) {
+	gone := false
+	var un js.Value
+	pl.unmount = func() {
+		gone = true
+		offer.Unmount(un)
+	}
+	offer.Mount(mount, pl.el, func(u js.Value) {
+		if gone {
+			offer.Unmount(u)
+			return
+		}
+		un = u
+	})
 }
 
 func (p *placements) clear() {

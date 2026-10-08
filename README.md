@@ -116,9 +116,27 @@ is base64 of a JSON object.
 
 A placement takes no input unless it asks with `"input": true`: then the mouse
 over it goes to it (a widget can be dragged or zoomed, say) and not to the
-program, which keeps the keys. What a command placed is taken away when it ends. Widgets are only what the page
-registers with `web.RegisterWidget(name, mount)`; a program can name one,
-never supply one.
+program, which keeps the keys. What a command placed is taken away when it ends. A widget is one the page
+registers with `web.RegisterWidget(name, mount)`, or one a program run from
+the filesystem offers from its own process with `widget.Register` (below).
+
+## Programs from the filesystem
+
+A wasm program on the PATH runs as a process of its own (bottle's `proc`),
+built by Go or by TinyGo, as a program runs in a terminal: its output appears
+as it is written, what is typed reaches its stdin, and Ctrl+C stops it. With
+its stdout on the terminal it has a terminal of its own — the size, resizes,
+raw mode — so a full-screen program works: `childtty.NewScreen()` is a tcell
+screen on it. It is told `WEBSH_PLACEMENTS=1` (`widget.Shown()`), and widgets
+it offers are withdrawn when it exits.
+
+```sh
+curl -o /bin/ttydemo https://websh.magnetosphere.net/bin/ttydemo.wasm
+ttydemo
+```
+
+`cmd/ttydemo` is that program: tcell cells, keys, resizes, and a widget of its
+own over a box of its cells.
 
 ## Architecture
 

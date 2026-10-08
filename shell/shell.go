@@ -29,6 +29,10 @@ type Shell struct {
 	RawMode func(on bool)
 	// Size, when set, reports the terminal dimensions.
 	Size func() (cols, rows int)
+	// IsTerminal, when set, reports whether w is the terminal itself rather
+	// than a pipe or a file: a program run from the filesystem with its
+	// stdout there is given a terminal of its own (exec_js.go).
+	IsTerminal func(w io.Writer) bool
 	// WakeStdin, when set, makes a Read blocked on the terminal's stdin return
 	// with no data. An applet that reads keys on its own goroutine (ssh) calls
 	// it when its session ends on its own, rather than waiting for a key.

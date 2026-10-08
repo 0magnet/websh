@@ -35,7 +35,14 @@
 </div>
 <!-- seo:end -->
 <div id="terminal"></div>
+<script src="../jsfs.js"></script>
+<script src="../vnet.js"></script>
 <script src="wasm_exec.js"></script>
+<script src="../proc.js"></script>
+<script>
+  proc.assets.wasmExecGo = "wasm_exec.js";
+  proc.assets.wasmExecTinyGo = "../wasm_exec.js";
+</script>
 <script>
   const go = new Go();
   WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)

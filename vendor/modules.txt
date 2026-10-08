@@ -3,6 +3,9 @@
 github.com/0magnet/afero
 github.com/0magnet/afero/internal/common
 github.com/0magnet/afero/mem
+# github.com/0magnet/bottle v0.0.1-0.20261008002436-e62e87c5f3a9
+## explicit; go 1.24
+github.com/0magnet/bottle/proc
 # github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
 ## explicit; go 1.26.0
 github.com/0magnet/sh/v3/expand
@@ -76,6 +79,16 @@ github.com/creack/pty
 # github.com/dustin/go-humanize v1.1.0
 ## explicit; go 1.21
 github.com/dustin/go-humanize
+# github.com/gdamore/encoding v1.0.1
+## explicit; go 1.9
+github.com/gdamore/encoding
+# github.com/gdamore/tcell/v3 v3.5.0
+## explicit; go 1.25.0
+github.com/gdamore/tcell/v3
+github.com/gdamore/tcell/v3/color
+github.com/gdamore/tcell/v3/internal/widthutil
+github.com/gdamore/tcell/v3/tty
+github.com/gdamore/tcell/v3/vt
 # github.com/itchyny/gojq v0.12.19
 ## explicit; go 1.24.0
 github.com/itchyny/gojq
@@ -133,6 +146,8 @@ golang.org/x/sys/windows
 golang.org/x/term
 # golang.org/x/text v0.42.0
 ## explicit; go 1.26.0
+golang.org/x/text/encoding
+golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/runes
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
