@@ -18,9 +18,13 @@ set -eu
 
 cd "$(dirname "$0")"
 
+# The version programs are told (Discovery): stamped, because released
+# TinyGo records no module information (tinygo-org/tinygo#5592 adds it).
+version() { git describe --always --dirty 2>/dev/null || echo dev; }
+
 build_tinygo() {
 	mkdir -p docs
-	tinygo build -o docs/main.wasm -target wasm -no-debug ./cmd/websh
+	tinygo build -o docs/main.wasm -target wasm -no-debug -ldflags "-X github.com/0magnet/websh/web.Version=$(version)" ./cmd/websh
 	cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" docs/wasm_exec.js
 }
 
