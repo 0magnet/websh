@@ -1,7 +1,7 @@
 github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992 h1:pZAOYtc0bq6O2bND5d/QRt9k1rctn24XrEJocleRqAw=
 github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992/go.mod h1:NSftFi+9304TBnW2Le6Vd3q19YrVL3CbErMOMDmPxmU=
-github.com/0magnet/bottle v0.0.1-0.20261008002436-e62e87c5f3a9 h1:Q2NYXD43f9XR8WScO4Y/vYhfIgEfOinLXrvxtSf0feA=
-github.com/0magnet/bottle v0.0.1-0.20261008002436-e62e87c5f3a9/go.mod h1:02z8sWzqF3QH4SjMxnx5bnysFUqsw9CdUTtIj+CIxkw=
+github.com/0magnet/bottle v0.0.1-0.20261008142407-9dad3ecd3fe0 h1:pQXCnLBavroEZNjy77J+yLXCxvBqdJeNwVB5s7dZt5w=
+github.com/0magnet/bottle v0.0.1-0.20261008142407-9dad3ecd3fe0/go.mod h1:02z8sWzqF3QH4SjMxnx5bnysFUqsw9CdUTtIj+CIxkw=
 github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5 h1:phE5/F4rBgh+VE51tU7Y6ZusHkQnECwIBBZHQJf7S5M=
 github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5/go.mod h1:ngQcnC5AqtrdAe3n1WaXvxXU63Jex0A7zKpJ4xQMfmQ=
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7yqiOHvv3oD89sc+YC1dAw4zw1o48mQ=

@@ -3,7 +3,7 @@
 github.com/0magnet/afero
 github.com/0magnet/afero/internal/common
 github.com/0magnet/afero/mem
-# github.com/0magnet/bottle v0.0.1-0.20261008002436-e62e87c5f3a9
+# github.com/0magnet/bottle v0.0.1-0.20261008142407-9dad3ecd3fe0
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
 # github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
