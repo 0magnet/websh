@@ -85,13 +85,14 @@ The host gives every byte of output one of four sources:
 The reply to Discovery says which source the host saw (`"trust"`), so a
 program does not ask for what it will not get.
 
-**Built:** only page and local exist so far; there is no remote gating yet,
-and ssh and mosh output is treated as local. **Next:** the session marks a
-remote command's output (ssh, mosh) as remote while it runs.
+**Built:** the shell marks the output source as a command runs (Go:
+`Shell.WithSource`): a program from the filesystem is local, ssh and mosh are
+remote, everything else is page. Remote output may not mount a widget a
+program in the tab offered. The other rows apply as their features are built.
 
 ## Discovery
 
-**Next.**
+**Built.**
 
     query:  OSC 7337 ; caps ? ST
     reply:  OSC 7337 ; caps ; <data> ST
@@ -102,9 +103,11 @@ remote command's output (ssh, mosh) as remote while it runs.
   "host": "websh",
   "version": "<module version>",
   "trust": "local",
-  "cell": { "w": 8.99, "h": 19.71 },
+  "cell": { "w": 8.99, "h": 19.7 },
   "dpr": 1.0156,
-  "features": ["place", "place.input", "widget.offer", "event", "font", "page", "notify"]
+  "cols": 208,
+  "rows": 47,
+  "features": ["place", "place.input", "widget.offer"]
 }
 ```
 
@@ -116,7 +119,13 @@ A program that does not know whether it is in websh at all sends the query
 and then DA1 (`CSI c`), which every terminal answers, and reads its input
 until the DA1 reply arrives. If the caps reply came first, the host speaks
 this protocol; if only DA1 came, it does not. No timeout is needed, and
-nothing is guessed. The Go package `hybrid` does exactly this.
+nothing is guessed. The Go package `hybrid` does exactly this (`hybrid.Probe`),
+and hands back the terminal's input with nothing lost: keys typed during the
+probe, and the read it had waiting. `childtty.Open` runs it before tcell takes
+the terminal; `hybrid.Current` has the answer.
+
+`features` lists only what the host does now, for this program's trust. So
+far: `place` (images), `place.input`, `widget.offer` (not for remote output).
 
 Standard queries a program may also use, answered by websh's terminal
 (xterm-go):
@@ -125,11 +134,11 @@ Standard queries a program may also use, answered by websh's terminal
 |---|---|---|
 | DA1 `CSI c` | `CSI ? 1 ; 2 c` | built |
 | DA2 `CSI > c` | `CSI > 0 ; 276 ; 0 c` | built |
-| XTVERSION `CSI > q` | `DCS > \| websh(<version>) ST` | next |
-| Cell size `CSI 16 t` | `CSI 6 ; <h> ; <w> t` (device pixels) | next |
-| Text area `CSI 14 t` | `CSI 4 ; <h> ; <w> t` | next |
-| Size in cells `CSI 18 t` | `CSI 8 ; <rows> ; <cols> t` | built, but switched off; next: on |
-| Colors OSC 10/11 `?` | `OSC 10 ; rgb:rrrr/gggg/bbbb ST` | next |
+| XTVERSION `CSI > q` | `DCS > \| websh ST` | built |
+| Cell size `CSI 16 t` | `CSI 6 ; <h> ; <w> t` (device pixels) | built |
+| Text area `CSI 14 t` | `CSI 4 ; <h> ; <w> t` (device pixels) | built |
+| Size in cells `CSI 18 t` | `CSI 8 ; <rows> ; <cols> t` | built |
+| Colors OSC 4/10/11/12 `?` | `OSC 10 ; rgb:rrrr/gggg/bbbb ST` | built |
 | DSR, DECRQM, DECRQSS | standard | built |
 
 ## Placements
@@ -239,7 +248,7 @@ and indexed.
 | Downloads offered | iTerm2 OSC 1337 `File=` (inline=0) | planned |
 | Files dropped onto the terminal | `OSC 7337 ; drop ; <data> ST` on input, the file written to the shell's filesystem | planned |
 | Sound | `OSC 7337 ; sound ; <data> ST` (a URL or shipped bytes) | planned |
-| Focus in/out | mode 1004 (`CSI I`, `CSI O`) | next (xterm-go sets the mode but sends nothing) |
+| Focus in/out | mode 1004 (`CSI I`, `CSI O`) | built |
 
 ## Accessibility and search
 
@@ -254,18 +263,24 @@ off-screen and live for assistive technology, and, for a page program, in
 the document for indexing. This is how a TUI page meets the bar the web sets
 for everything else; without it, it should not be anyone's only interface.
 
+## Replies are not keys
+
+A terminal's replies (DA, DSR, the reports above, the caps reply) are kept
+apart from what the person types (xterm-go's `OnReply`). They go to the
+command that is running, never to the line editor and never echoed; one the
+command never reads is dropped when it ends, rather than reaching the next
+command that reads stdin as though typed (`printf '\e[c'` used to leave
+`ESC[?1;2c` for the next `read`). Typed keys carry over to the next command,
+as type-ahead does in any terminal.
+
 ## Known gaps in websh's terminal
 
 Found while writing this, to be fixed rather than worked around:
 
-- Terminal replies (DA, DSR, ...) reach the shell as if typed: at a prompt they
-  land in the line editor, and in cooked mode they are echoed. xterm-go knows
-  which bytes are replies and drops that before the session sees them.
-- OSC 10/11 queries are parsed and never answered; CSI 14/16 t likewise; all
-  CSI t reports are off.
-- Mode 1004 focus events are never sent.
 - OSC 0/2 titles are parsed and go nowhere.
-- No XTVERSION, no OSC 52, no kitty keyboard protocol.
+- No OSC 52, no kitty keyboard protocol.
+- Fixed: replies taken as typing, unanswered OSC 10/11 and CSI 14/16 t, CSI t
+  reports switched off, focus events never sent, no XTVERSION.
 
 ## Prior art
 

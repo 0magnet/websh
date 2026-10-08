@@ -90,6 +90,7 @@ func (s *Shell) execExternal(ctx context.Context, args []string) (int, bool) {
 		Printf(hc.Stderr, "%s: %v\n", args[0], err)
 		return 126, true
 	}
+	defer s.WithSource("local")()
 
 	done := make(chan struct{})
 	var code int

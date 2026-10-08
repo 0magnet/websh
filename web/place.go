@@ -136,8 +136,8 @@ func (p *placements) place(id string, d placeData) {
 		var offered js.Value
 		if w == nil {
 			m, ok := offer.Find(d.Widget)
-			if !ok {
-				return
+			if !ok || p.s.Shell.Source() == "remote" {
+				return // a remote program is not in the tab to offer one
 			}
 			offered = m
 		}

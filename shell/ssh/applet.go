@@ -164,6 +164,7 @@ func (ap Applet) Raw() func() {
 
 func runSSH(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, argv []string) int {
 	ap := Applet{S: s, HC: hc}
+	defer s.WithSource("remote")() // what arrives is another machine's
 	a, err := parseArgs(argv, ap.Env)
 	if errors.Is(err, errHelp) {
 		shell.Print(hc.Stdout, usage)

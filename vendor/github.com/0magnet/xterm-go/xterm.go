@@ -333,10 +333,43 @@ func (t *Terminal) wireCoreEvents() {
 			t.OnBell()
 		}
 	}
+	// CSI 14 t and 16 t: the text area and one cell, in device pixels, for a
+	// program that draws pictures to fit its cells. Answered only where the
+	// embedder enabled them (Options.WindowOptions).
+	t.Core.OnWindowsOptionsReport = func(kind int) {
+		dpr := js.Global().Get("devicePixelRatio").Float()
+		if dpr <= 0 {
+			dpr = 1
+		}
+		px := func(v float64) int { return int(v*dpr + 0.5) }
+		switch kind {
+		case vt.ReportCellSizePixels:
+			t.Core.Input("\x1b[6;"+strconv.Itoa(px(t.cellH))+";"+strconv.Itoa(px(t.cellW))+"t", false)
+		case vt.ReportWinSizePixels:
+			t.Core.Input("\x1b[4;"+strconv.Itoa(px(t.cellH*float64(t.Core.Rows())))+";"+strconv.Itoa(px(t.cellW*float64(t.Core.Cols())))+"t", false)
+		}
+	}
 	t.Core.OnColor = func(events []vt.ColorEvent) {
 		changed := false
 		for _, e := range events {
 			switch e.Type {
+			case vt.ColorRequestReport:
+				// OSC 4 / 10 / 11 / 12 with "?": the color now in use.
+				var css, ident string
+				switch e.Index {
+				case vt.SpecialColorForeground:
+					css, ident = t.colors.Foreground, "10"
+				case vt.SpecialColorBackground:
+					css, ident = t.colors.Background, "11"
+				case vt.SpecialColorCursor:
+					css, ident = t.colors.Cursor, "12"
+				default:
+					if e.Index < 0 || e.Index >= 256 {
+						continue
+					}
+					css, ident = t.colors.Ansi[e.Index], "4;"+strconv.Itoa(e.Index)
+				}
+				t.Core.Input("\x1b]"+ident+";"+xParseColor(cssToRGB(css))+"\x1b\\", false)
 			case vt.ColorRequestSet:
 				css := rgbCSS(e.Color)
 				switch e.Index {
@@ -383,6 +416,17 @@ func (t *Terminal) wireCoreEvents() {
 }
 
 func (t *Terminal) wireDomEvents() {
+	// Focus reports (mode 1004), for a program that dims or pauses when the
+	// person looks away.
+	for ev, seq := range map[string]string{"focus": "\x1b[I", "blur": "\x1b[O"} {
+		t.textarea.Call("addEventListener", ev, t.fn(func(js.Value, []js.Value) any {
+			if t.Core.CoreService().DecPrivateModes.SendFocus {
+				t.Core.Input(seq, false)
+			}
+			return nil
+		}))
+	}
+
 	// IME composition
 	t.textarea.Call("addEventListener", "compositionstart", t.fn(func(js.Value, []js.Value) any {
 		t.composition.CompositionStart()

@@ -15,9 +15,8 @@ import (
 // demos, where a cursor key means the same thing whenever it lands — a
 // terminal client is the case where the order IS the content.
 func TestStdinArrivesInTheOrderItWasTyped(t *testing.T) {
-	r, w := io.Pipe()
-	s := &Session{stdinW: w, stdinQ: make(chan []byte, 4096)}
-	go s.pumpStdin()
+	s := &Session{in: newInQueue()}
+	r := s.in
 
 	const want = "the quick brown fox jumps over the lazy dog 0123456789"
 	// One call per character, which is what onData does — a keystroke at a
@@ -52,13 +51,12 @@ func TestStdinArrivesInTheOrderItWasTyped(t *testing.T) {
 // character is the better failure, and it takes a machine, not a person, to
 // reach it.
 func TestStdinQueueDropsRatherThanBlocks(t *testing.T) {
-	_, w := io.Pipe() // nothing reads, so the writer would block forever
-	s := &Session{stdinW: w, stdinQ: make(chan []byte, 4)}
+	s := &Session{in: newInQueue()} // nothing reads it
 
 	done := make(chan struct{})
 	go func() {
 		for i := 0; i < 10000; i++ {
-			s.writeStdin([]byte("x"))
+			s.writeStdin(make([]byte, 1024)) // ten times what it holds
 		}
 		close(done)
 	}()
@@ -74,8 +72,35 @@ func TestStdinQueueDropsRatherThanBlocks(t *testing.T) {
 func TestStdinWriteAfterCloseIsSafe(t *testing.T) {
 	s := &Session{}
 	s.writeStdin([]byte("no queue yet")) // must not panic
-	_, w := io.Pipe()
-	s2 := &Session{stdinW: w, stdinQ: make(chan []byte, 2)}
-	s2.stdinQ = nil
+	s2 := &Session{in: newInQueue()}
+	s2.in.close()
 	s2.writeStdin([]byte("queue gone")) // must not panic
+	if n, err := s2.in.Read(make([]byte, 8)); n != 0 || err != io.EOF {
+		t.Errorf("closed queue read %d, %v", n, err)
+	}
+}
+
+// A reply the terminal gives a command's query is that command's: one it
+// never read (printf '\e[c') must not reach the next command that reads
+// stdin, as though typed. Typed keys carry over, as type-ahead does.
+func TestUnreadRepliesDoNotOutliveTheirCommand(t *testing.T) {
+	q := newInQueue()
+	q.next() // command 1 asks and never reads
+	q.push(inItem{b: []byte("\x1b[?1;2c"), reply: true})
+	q.push(inItem{b: []byte("typed ahead ")})
+	q.next()                                            // command 2 reads
+	q.push(inItem{b: []byte("\x1b[1;1R"), reply: true}) // its own query's answer
+	got := make([]byte, 64)
+	n1, err1 := q.Read(got)
+	n2, err2 := q.Read(got[n1:])
+	if err1 != nil || err2 != nil {
+		t.Fatal(err1, err2)
+	}
+	if s := string(got[:n1+n2]); s != "typed ahead \x1b[1;1R" {
+		t.Errorf("command 2 read %q", s)
+	}
+	q.push(inItem{wake: true})
+	if n, err := q.Read(got); n != 0 || err != nil {
+		t.Errorf("wake read %d, %v", n, err)
+	}
 }

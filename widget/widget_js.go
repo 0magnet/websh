@@ -17,6 +17,8 @@ import (
 	"syscall/js"
 
 	"github.com/0magnet/bottle/proc"
+
+	"github.com/0magnet/websh/hybrid"
 )
 
 // Global is the name of the registry on the page.
@@ -115,9 +117,16 @@ func Unmount(unmount js.Value) {
 	}
 }
 
-// Shown reports whether this program's output goes to a websh terminal that
-// shows placements: websh tells a program it runs so (WEBSH_PLACEMENTS=1).
+// Shown reports whether this program's output goes to a terminal that shows
+// placements: the host said so when asked (hybrid.Probe, which childtty
+// runs), or, from a websh that predates asking, by WEBSH_PLACEMENTS=1.
 // Elsewhere the sequences are ignored and the cells are the picture.
 func Shown() bool {
-	return proc.Getenv("WEBSH_PLACEMENTS") == "1"
+	return hybrid.Current().Has("place") || proc.Getenv("WEBSH_PLACEMENTS") == "1"
+}
+
+// Offered reports whether this program may offer widgets of its own: it runs
+// in the host's tab and the host trusts it to.
+func Offered() bool {
+	return hybrid.Current().Has("widget.offer") || proc.Getenv("WEBSH_PLACEMENTS") == "1"
 }

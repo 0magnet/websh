@@ -24,6 +24,7 @@ import (
 	"github.com/gdamore/tcell/v3/color"
 
 	"github.com/0magnet/websh/childtty"
+	"github.com/0magnet/websh/hybrid"
 	"github.com/0magnet/websh/widget"
 )
 
@@ -96,10 +97,15 @@ func draw(s tcell.Screen, out io.Writer, placed bool, last string, keys int) {
 	s.Put(w-1, 0, "┐", frame)
 	s.Put(0, h-1, "└", frame)
 	s.Put(w-1, h-1, "┘", frame)
+	host := "the host offers nothing beyond cells"
+	if c := hybrid.Current(); c != nil {
+		host = fmt.Sprintf("host %s %s, trust %s, cell %.2fx%.2f px, offers %v", c.Host, c.Version, c.Trust, c.Cell.W, c.Cell.H, c.Features)
+	}
 	lines := []string{
 		"ttydemo: a separate wasm process in websh",
 		fmt.Sprintf("terminal %dx%d — resize the window", w, h),
 		fmt.Sprintf("keys %d, last %s", keys, last),
+		host,
 		"q or Ctrl+C quits",
 	}
 	for i, l := range lines {
@@ -107,7 +113,7 @@ func draw(s tcell.Screen, out io.Writer, placed bool, last string, keys int) {
 	}
 	// The box: cells a terminal without placements shows, and the widget's
 	// place where it has them.
-	bx, by, bw, bh := 2, 6, min(36, w-4), min(8, h-8)
+	bx, by, bw, bh := 2, 7, min(36, w-4), min(8, h-9)
 	if bw > 2 && bh > 2 {
 		for y := by; y < by+bh; y++ {
 			for x := bx; x < bx+bw; x++ {

@@ -24,7 +24,7 @@ github.com/0magnet/winbox-go
 # github.com/0magnet/wisp v0.0.0-20261004205345-c7d0d339b3d7
 ## explicit; go 1.26.4
 github.com/0magnet/wisp
-# github.com/0magnet/xterm-go v0.0.1-0.20261004020305-36b45f096b30
+# github.com/0magnet/xterm-go v0.0.1-0.20261008015502-77e055533c1d
 ## explicit; go 1.24
 github.com/0magnet/xterm-go
 github.com/0magnet/xterm-go/vt

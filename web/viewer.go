@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"strings"
+
+	"github.com/0magnet/websh/hybrid"
 	"syscall/js"
 
 	"github.com/0magnet/winbox-go"
@@ -47,6 +49,8 @@ func (s *Session) wireViewer(el js.Value) {
 		cmd, arg, _ := strings.Cut(data, ";")
 		p.reposition()
 		switch cmd {
+		case "caps?":
+			s.Term.Core.Input(hybrid.Reply(s.caps(p)), false)
 		case "place":
 			id, enc, _ := strings.Cut(arg, ";")
 			var d placeData

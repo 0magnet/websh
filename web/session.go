@@ -120,16 +120,14 @@ type Session struct {
 	Shell  *shell.Shell
 	Editor *shell.LineEditor
 
-	host   string
-	stdinW *io.PipeWriter
-	lines  chan string
+	host  string
+	lines chan string
 
 	running  bool
 	rawInput bool
 
-	// stdinQ carries input to the running command in the order it was typed.
-	// See writeStdin.
-	stdinQ    chan []byte
+	// in is the running command's stdin. See inQueue.
+	in        *inQueue
 	cancelRun context.CancelFunc
 	closed    bool
 
@@ -178,6 +176,13 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	if opt.FontSize > 0 {
 		o.FontSize = opt.FontSize
 	}
+	// Its name for XTVERSION, and the size reports a program may ask for
+	// (cells, and pixels for one drawing pictures to fit them); none of the
+	// window-changing ones.
+	o.XTVersion = "websh"
+	o.WindowOptions.GetWinSizeChars = true
+	o.WindowOptions.GetWinSizePixels = true
+	o.WindowOptions.GetCellSizePixels = true
 	s.Term = xterm.New(o)
 	s.Term.Open(el)
 	// Watch the container, not the window: mounted in anything smaller than
@@ -193,10 +198,8 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 		s.wireZoom(el, s.Term.FontSize())
 	}
 
-	stdinR, stdinW := io.Pipe()
-	s.stdinW = stdinW
-
-	sh, err := shell.New(fsys, stdinR, termWriter{s.Term}, termWriter{s.Term}, opt.Env...)
+	s.in = newInQueue()
+	sh, err := shell.New(fsys, s.in, termWriter{s.Term}, termWriter{s.Term}, opt.Env...)
 	if err != nil {
 		s.Term.Dispose()
 		return nil, fmt.Errorf("websh: %w", err)
@@ -237,22 +240,22 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 		tw, ok := w.(termWriter)
 		return ok && tw.term == s.Term
 	}
-	// An empty write: the pipe hands it to a pending Read as zero bytes.
-	sh.WakeStdin = func() {
-		select {
-		case s.stdinQ <- []byte{}:
-		default:
-		}
-	}
+	// A pending Read returns with nothing.
+	sh.WakeStdin = func() { s.in.push(inItem{wake: true}) }
 
 	s.Term.Core.OnData = s.onData
+	// The terminal's replies are for the program that asked: never for the
+	// line editor, never echoed, and dropped when nothing is running.
+	s.Term.Core.OnReply = func(data string) {
+		if s.running {
+			s.in.push(inItem{b: []byte(data), reply: true})
+		}
+	}
 
 	// Publish the shell -> session pairing, so a full-screen applet can find
 	// the terminal it is running in. See sessionfor.go.
 	registerSession(s)
 
-	s.stdinQ = make(chan []byte, 4096)
-	go s.pumpStdin()
 	go s.run()
 
 	if opt.Greeting != "" {
@@ -369,25 +372,14 @@ func (s *Session) complete(word string, isFirstWord bool) []string {
 // terminal client is the case that cannot tolerate it, because there the order
 // IS the content.
 //
-// One queue, one writer goroutine, so the blocking stays off the JS callback
-// and the sequence is whatever was typed. The buffer is large enough that a
-// person cannot fill it; a full queue drops rather than blocks, because
-// blocking here would freeze the page rather than lose a keystroke.
+// One queue (inQueue), so the sequence is whatever was typed, and adding to
+// it never blocks the JS callback; a full one drops rather than freeze the
+// page.
 func (s *Session) writeStdin(b []byte) {
-	if len(b) == 0 || s.stdinQ == nil {
+	if len(b) == 0 || s.in == nil {
 		return
 	}
-	select {
-	case s.stdinQ <- b:
-	default:
-	}
-}
-
-// pumpStdin is the single writer. It ends when the session closes the queue.
-func (s *Session) pumpStdin() {
-	for b := range s.stdinQ {
-		shell.Write(s.stdinW, b)
-	}
+	s.in.push(inItem{b: b})
 }
 
 // run is the command loop. It is a goroutine so the JS event loop — and so the
@@ -405,6 +397,7 @@ func (s *Session) run() {
 		// background jobs from this context, so `sleep 30 &` survives to the
 		// next prompt as it would in bash.
 		ctx, cancel := context.WithCancel(context.Background())
+		s.in.next() // replies to the last command's queries are not this one's
 		s.cancelRun, s.running = cancel, true
 
 		_, err := s.Shell.Run(ctx, line)
@@ -451,13 +444,8 @@ func (s *Session) Close() {
 	s.closed = true
 	forgetSession(s)
 	s.releaseZoom()
-	if s.stdinQ != nil {
-		close(s.stdinQ)
-		s.stdinQ = nil
-	}
-	if s.stdinW != nil {
-		// The session is going away; a failed close has no reader to report to.
-		s.stdinW.Close() //nolint:errcheck,gosec
+	if s.in != nil {
+		s.in.close()
 	}
 	close(s.lines)
 	if s.Term != nil {

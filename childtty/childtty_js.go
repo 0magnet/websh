@@ -17,23 +17,33 @@
 package childtty
 
 import (
+	"io"
 	"sync"
+	"time"
 
 	"github.com/0magnet/bottle/proc"
 	"github.com/gdamore/tcell/v3"
 	"github.com/gdamore/tcell/v3/tty"
+
+	"github.com/0magnet/websh/hybrid"
 )
 
-// Open returns this program's terminal, or false when it has none.
+// Open returns this program's terminal, or false when it has none. It asks
+// the host what it offers first (hybrid.Probe), before anything else reads
+// the terminal; hybrid.Current has the answer.
 func Open() (tty.Tty, bool) {
 	t, ok := proc.Term()
 	if !ok {
 		return nil, false
 	}
 	c := &childTty{t: t}
+	_, c.in, _ = hybrid.Probe(t, t, probeWait) //nolint:errcheck // no answer means cells only; c.in is the input from here either way
 	t.OnResize(c.resized)
 	return c, true
 }
+
+// probeWait is how long a terminal that answers nothing is waited for.
+const probeWait = 2 * time.Second
 
 // NewScreen is a tcell screen on this program's terminal, or tcell's own
 // screen where it has none.
@@ -46,6 +56,7 @@ func NewScreen() (tcell.Screen, error) {
 
 type childTty struct {
 	t  *proc.Terminal
+	in io.Reader // the terminal's input, after the probe
 	mu sync.Mutex
 	ch chan<- bool
 }
@@ -80,6 +91,6 @@ func (c *childTty) WindowSize() (tty.WindowSize, error) {
 	return tty.WindowSize{Width: w, Height: h}, nil
 }
 
-func (c *childTty) Read(p []byte) (int, error)  { return c.t.Read(p) }
+func (c *childTty) Read(p []byte) (int, error)  { return c.in.Read(p) }
 func (c *childTty) Write(p []byte) (int, error) { return c.t.Write(p) }
 func (c *childTty) Close() error                { return nil }
