@@ -19,6 +19,7 @@ import (
 	"io"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall/js"
 
@@ -137,6 +138,8 @@ type Session struct {
 	// cooked is the line being typed to a command in cooked mode, held
 	// until Enter as a terminal's line discipline holds it.
 	cooked []rune
+	// setScreenReader turns screen reader mode on or off (a11y.go).
+	setScreenReader func(on bool)
 	// bar is the key bar on a touch screen, or nil (keybar.go).
 	bar *keyBar
 	// fonts is a program's font, while it has one (font.go).
@@ -227,6 +230,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	if !opt.NoKeyBar && touchScreen() {
 		s.wireKeyBar(box)
 	}
+	s.wireA11y(el, box)
 	if !opt.NoWebGL {
 		if err := s.Term.EnableWebGL(); err != nil {
 			js.Global().Get("console").Call("log", "websh: webgl unavailable: "+err.Error())
@@ -347,7 +351,11 @@ func (s *Session) Prompt() string {
 }
 
 // WritePrompt draws the prompt.
-func (s *Session) WritePrompt() { s.Term.WriteString(s.Prompt()) }
+func (s *Session) WritePrompt() {
+	s.osc133("A") // a prompt starts (a11y.go)
+	s.Term.WriteString(s.Prompt())
+	s.osc133("B") // and the command line after it
+}
 
 func (s *Session) onData(data string) {
 	data = s.bar.apply(data) // a latched Ctrl or Alt on a touch screen
@@ -454,7 +462,9 @@ func (s *Session) run() {
 		s.line = line
 		s.cancelRun, s.running = cancel, true
 
+		s.osc133("C") // the command's output starts
 		_, err := s.Shell.Run(ctx, line)
+		s.osc133("D;" + strconv.Itoa(exitCode(err)))
 
 		s.running, s.cancelRun = false, nil
 		cancel()

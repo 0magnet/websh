@@ -27,6 +27,10 @@ type inlineImage struct {
 	col    int
 	cols   int
 	rows   int
+	// w and h, when set, are the picture's own size in CSS pixels, which it
+	// is drawn at instead of being fitted to its cells: a sixel picture is
+	// pixels, and stretching it to whole cells would blur it.
+	w, h float64
 }
 
 // AddImage lays the picture at src (any URL an <img> takes: a blob: one
@@ -38,26 +42,31 @@ func (t *Terminal) AddImage(src string, cols, rows int) *InlineImage {
 	if !t.opened || cols <= 0 || rows <= 0 {
 		return nil
 	}
+	el := js.Global().Get("document").Call("createElement", "img")
+	el.Set("alt", "")
+	el.Set("src", src)
+	el.Get("style").Set("cssText", "position:absolute;object-fit:contain;pointer-events:none")
+	img := t.layImage(el, cols, rows)
+	t.Core.Buffer().X = min(img.col+cols, t.Core.Cols()-1)
+	t.placeImages()
+	return &InlineImage{img: img}
+}
+
+// layImage puts el over cols×rows cells at the cursor and carries the text
+// on below it, leaving the cursor on the picture's last row for the caller
+// to put in the column it wants.
+func (t *Terminal) layImage(el js.Value, cols, rows int) *inlineImage {
 	t.wireImages()
 	b := t.Core.Buffer()
-	img := &inlineImage{buf: b, col: b.X, cols: cols, rows: rows}
+	img := &inlineImage{buf: b, col: b.X, cols: cols, rows: rows, el: el}
 	img.marker = b.AddMarker(b.YBase + b.Y)
-	img.el = js.Global().Get("document").Call("createElement", "img")
-	img.el.Set("alt", "")
-	img.el.Set("src", src)
-	img.el.Get("style").Set("cssText", "position:absolute;object-fit:contain;pointer-events:none")
 	t.imagesLayer().Call("append", img.el)
 	t.images = append(t.images, img)
-
-	// The text goes on below it.
 	ih := t.Core.InputHandler()
 	for i := 1; i < rows; i++ {
 		ih.LineFeed()
 	}
-	b = t.Core.Buffer()
-	b.X = min(img.col+cols, t.Core.Cols()-1)
-	t.placeImages()
-	return &InlineImage{img: img}
+	return img
 }
 
 // InlineImage is a picture AddImage laid.
@@ -149,8 +158,13 @@ func (t *Terminal) placeImages() {
 		st.Set("display", "")
 		st.Set("left", jsPx(float64(img.col)*t.cellW))
 		st.Set("top", jsPx(float64(row)*t.cellH))
-		st.Set("width", jsPx(float64(img.cols)*t.cellW))
-		st.Set("height", jsPx(float64(img.rows)*t.cellH))
+		if img.w > 0 {
+			st.Set("width", jsPx(img.w))
+			st.Set("height", jsPx(img.h))
+		} else {
+			st.Set("width", jsPx(float64(img.cols)*t.cellW))
+			st.Set("height", jsPx(float64(img.rows)*t.cellH))
+		}
 	}
 	clear(t.images[len(kept):])
 	t.images = kept
