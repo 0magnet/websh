@@ -2,7 +2,7 @@
 
 A bash-like shell running entirely in your browser — no server, no container, no emulator. WebAssembly all the way down.
 
-**[Live demo](https://websh.magnetosphere.net/)** (TinyGo build, 3.3 MB — the default) · **[standard Go build](https://websh.magnetosphere.net/go/)** (12 MB)
+**[Live demo](https://websh.magnetosphere.net/)** (TinyGo build, 6 MB — the default) · **[standard Go build](https://websh.magnetosphere.net/go/)** (20 MB)
 
 ![websh in the browser](docs/websh-demo.png "ls -la / against the IndexedDB-backed filesystem, in a wasm shell")
 
@@ -32,7 +32,7 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 - Pipes and redirections against the virtual filesystem
 - **`awk`** ([goawk](https://github.com/benhoyt/goawk)) and **`jq`** ([gojq](https://github.com/itchyny/gojq)) — the real things, as pure-Go libraries
 - **`sed`**: POSIX sed with the common GNU extensions — line, `$`, `/re/`, `first~step` and range addresses with `!`; `s` (`g`, `p`, Nth, `I`, `&`, `\1`, `\U`…), `p d q n N D P = y a i c r w h H g G x b t T` and `{…}` blocks; `-n -e -f -E -s`, and `-i[SUFFIX]` in place on the virtual filesystem. Regexes are translated to Go's RE2, so a back-reference inside a pattern is the one thing missing
-- ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
+- ~45 applets: `ls cat mkdir rm cp mv touch head tail wc grep sed find cut tr xargs tac nl seq sort uniq tree du stat chmod md5sum sha256sum base64 xxd basename dirname date sleep clear env which uname hostname help imgcat a11y reset-fs` + the interpreter's builtins (`cd pwd echo printf read test exit export unset alias eval pushd popd ...`)
 - **Bash's `help`**: `builtin help` lists every builtin with its synopsis in two columns, `builtin help cd` documents one, and a star marks the few that are recognized but not implemented (`bind caller complete compopt fc newgrp suspend ulimit`)
 - **Job control**: `sleep 30 &` then `jobs`, `kill %1`, `disown`, `fg`, `bg`. A job is a goroutine, so `kill` cancels it rather than signaling a process, and nothing is ever stopped — there is no terminal to hand a job. Job specs work as in bash: `%1`, `%+`, `%sleep`, `%?leep`
 - **`compgen`** (the completions the shell itself knows: `-a -b -c -d -e -f -k -v -W -A`), **`history`** (over the line editor's list, `-c` to clear), **`enable -n`** to turn a builtin off, **`umask`**, **`times`**
@@ -103,22 +103,29 @@ A program in websh can show real images and page-provided widgets by
 writing an escape sequence, OSC 7337, like OSC 8 makes a link. It is output
 like any other, so it also works from a program on the far end of an ssh or
 dmsg session, and a terminal that does not know it ignores it. Each `<data>`
-is base64 of a JSON object.
+is base64 of a JSON object. The verbs:
 
-| Sequence | Does |
-| --- | --- |
-| `OSC 7337 ; place ; <id> ; <data> ST` | lays an image (`"url"`, with `"fit"`: `contain`, `cover` or `fill`) or a widget (`"widget"`) over the cells `{"row","col","w","h"}`, borderless |
-| `OSC 7337 ; remove ; <id> ST` | takes a placement away |
-| `OSC 7337 ; clear ST` | takes them all away |
-| `OSC 7337 ; view ; <data> ST` | shows `{"url","title"}` in a window over the shell, unless the person closed it |
-| `OSC 7337 ; open ; <data> ST` | the same, even if they did |
-| `OSC 7337 ; close ST` | closes the window |
+- **Placing:** `place` lays an image (`"url"`, with `"fit"`: `contain`, `cover` or `fill`) or a widget (`"widget"`) over the cells `{"row","col","w","h"}`, borderless; `remove` and `clear` take placements away.
+- **Windows:** `view` shows `{"url","title"}` in a window over the shell, unless the person closed it; `open` shows it even then; `close` closes it.
+- **Discovery:** `caps?` asks what the host offers.
+- **Widgets:** `ship` sends html or wasm widgets to run sandboxed; `post` and `event` carry messages to a widget and what happens to it back.
+- **The page:** `font` brings a font, `page` sets the address and title (and handles deep links, `#run=...&at=`), `icon` sets the favicon, `sound` plays audio.
+- **Input and access:** `listen` asks for file drops, `mirror` publishes an accessible rendition of what is shown.
 
+[PROTOCOL.md](PROTOCOL.md) has the data each takes.
 A placement takes no input unless it asks with `"input": true`: then the mouse
 over it goes to it (a widget can be dragged or zoomed, say) and not to the
 program, which keeps the keys. What a command placed is taken away when it ends. A widget is one the page
 registers with `web.RegisterWidget(name, mount)`, or one a program run from
 the filesystem offers from its own process with `widget.Register` (below).
+
+### Standard sequences
+
+Beyond OSC 7337, websh honors what other terminals do: OSC 0/2 titles, OSC 8 links, OSC 52 clipboard (a read asks the person first), OSC 9, 777 and 99 notifications, OSC 1337 `File=` downloads and inline images, kitty graphics (APC `G`), sixel, the kitty keyboard protocol, OSC 22 pointer shapes, OSC 4/10/11/12 color queries, XTVERSION, CSI 14/16/18 t, and focus reporting (mode 1004). The shell marks its prompts with OSC 133, so Ctrl+Shift+Up and Ctrl+Shift+Down jump between them and Ctrl+Shift+O copies the last command's output. `imgcat` shows pictures inline.
+
+### Screen reader, touch and file drop
+
+`a11y on` and `a11y off` switch screen reader mode (an accessibility tree and a live region for output); the choice is kept in this browser's localStorage. On a touch screen a key bar sits under the terminal: Esc, Tab, Ctrl, Alt, the arrows, Home, End, PgUp, PgDn and `| ~ / -`. Ctrl and Alt latch for one key when tapped once and stay on when tapped twice; volume-down latches Ctrl where the browser passes it on. Files dropped onto the terminal are saved to `~/Downloads` and their paths typed at the cursor, or sent to a program that asked with `listen`.
 
 ## Programs from the filesystem
 
@@ -150,6 +157,15 @@ program counts and answers.
 
 ```
 cmd/websh/       js/wasm entry: terminal wiring, prompt, IndexedDB persistence
+web/             the host (js/wasm): session, the OSC 7337 protocol, placements,
+                   key bar, file drop, screen reader mode
+progressive/     the program side, pure Go: Probe, Filter, Place, Ship, Font,
+                   Page, Mirror, Image, Notify, Copy...
+widget/          offer a widget from a program run from the filesystem
+widget/inside/   for Go running as a shipped widget: talk to the program
+childtty/        a program's terminal as a tcell Tty, under bottle's proc
+cmd/ttydemo/     demo program; cmd/wasmwidget is the widget it ships
+cmd/progcheck/   reports what any terminal answers, progressive or not
 shell/           pure Go, natively testable (go test ./shell/):
   shell.go         interp.Runner + afero handlers (open/stat/readdir/access/exec)
   applets.go       the userland, written against afero
@@ -175,10 +191,10 @@ The `shell` package has no `syscall/js` — the whole engine (interpreter, files
 
 ## Building
 
+`./build.sh` builds everything into `docs/`, which GitHub Pages serves: `./build.sh tinygo`, `go` or `demo` builds one part. It copies bottle's `jsfs.js`, `vnet.js` and `proc.js` at the version go.mod names, stamps `web.Version` (what programs are told) from `git describe`, and builds the TinyGo page (6 MB), the standard Go page (20 MB, `docs/go/`) and the programs run from the filesystem (`ttydemo`, `wasmwidget`, `progcheck`, in `docs/bin/`). The raw commands:
+
 ```bash
-# TinyGo (the default live demo — ~2 MB):
 tinygo build -target wasm -no-debug -o docs/main.wasm ./cmd/websh
-# standard Go (served at /go/ — ~8 MB):
 GOOS=js GOARCH=wasm go build -o docs/go/main.wasm ./cmd/websh
 ```
 
@@ -226,13 +242,18 @@ gocloc --not-match-d='(vendor|node_modules|\.git)' .
 -------------------------------------------------------------------------------
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-Go                              17            309            744           3245
-JavaScript                       2            117             82            935
-HTML                             2              0              0             70
-YAML                             1              0              9             69
-Markdown                         1             25              0             65
-JSON                             2              0              0             28
+Go                              83           1093           2238          11888
+JavaScript                       5            266            663           2844
+Markdown                         2            158              0            556
+Makefile                         1             21             52            111
+HTML                             2              0             10             99
+YAML                             1              0              7             98
+Bourne Shell                     2             16             37             64
+JSON                             1              0              0              8
+XML                              1              0              0              4
+Plain Text                       1              1              0              3
 -------------------------------------------------------------------------------
-TOTAL                           25            451            835           4412
+TOTAL                           99           1555           3007          15675
 -------------------------------------------------------------------------------
+
 ```
