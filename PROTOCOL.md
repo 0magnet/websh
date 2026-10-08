@@ -341,6 +341,7 @@ too, as magnetosphere.net does (Accessibility and search).
 | Files dropped onto the terminal | saved in `~/Downloads` (the shell's filesystem and the page's), its path typed as a desktop terminal does; a program that sent `OSC 7337 ; listen ; drop` (`progressive.ListenDrop`) gets an event instead, ID and type `drop`, data `{path, name, size, type}`; 64 MB each | built |
 | Sound | `OSC 7337 ; sound ; <data> [; <chunk>] ST`, `{id, url \| type, volume, loop, stop, more}`: a URL, or bytes in chunks (`progressive.Sound`, `SoundData`, `SoundStop`); the same id replaces, every sound stops when the program exits; 8 MB | built |
 | Focus in/out | mode 1004 (`CSI I`, `CSI O`) | built |
+| Keyboard | the kitty keyboard protocol: flags pushed, popped, set and queried per screen (`CSI > u`, `CSI < u`, `CSI = u`, `CSI ? u`); disambiguated keys, press/repeat/release, alternate keys, every key as a code, associated text. The flags a program leaves are cleared when it exits | built (xterm-go) |
 
 ## Accessibility and search
 
@@ -387,11 +388,11 @@ as type-ahead does in any terminal.
 
 ## Known gaps in websh's terminal
 
-Found while writing this, to be fixed rather than worked around:
-
-- No kitty keyboard protocol.
-- Fixed: replies taken as typing, unanswered OSC 10/11 and CSI 14/16 t, CSI t
-  reports switched off, focus events never sent, no XTVERSION.
+Found while writing this, and fixed rather than worked around: replies taken
+as typing, unanswered OSC 10/11 and CSI 14/16 t, CSI t
+reports switched off, focus events never sent, no XTVERSION, no kitty keyboard
+protocol, APC strings (kitty graphics' transport) dropped by the parser, and
+non-wasm files handed to the process layer to fail compiling.
 
 ## Prior art
 

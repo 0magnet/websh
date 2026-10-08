@@ -471,6 +471,22 @@ func (t *Terminal) wireDomEvents() {
 			Key:      ev.Get("key").String(),
 			Code:     ev.Get("code").String(),
 		}
+		// A program that asked for the kitty keyboard protocol gets the keys
+		// it encodes that way; the rest go the legacy way below.
+		if flags := t.Core.InputHandler().KittyFlags(); flags != 0 {
+			event := vt.KittyPress
+			if ev.Get("repeat").Bool() {
+				event = vt.KittyRepeat
+			}
+			if seq, ok := vt.KittyKey(kev, flags, event); ok {
+				ev.Call("preventDefault")
+				ev.Call("stopPropagation")
+				t.keyDownHandled = true
+				t.sel.drop()
+				t.Core.Input(seq, true)
+				return nil
+			}
+		}
 		isMac := strings.Contains(window.Get("navigator").Get("platform").String(), "Mac")
 		result := vt.EvaluateKeyboardEvent(kev, t.Core.CoreService().DecPrivateModes.ApplicationCursorKeys, isMac, false)
 		switch result.Type {
@@ -504,6 +520,29 @@ func (t *Terminal) wireDomEvents() {
 			t.Core.Input(result.Key, true)
 		} else if result.Cancel {
 			ev.Call("preventDefault")
+		}
+		return nil
+	}))
+
+	// keyup: a key's release, for a program that asked the kitty keyboard
+	// protocol to report them.
+	t.textarea.Call("addEventListener", "keyup", t.fn(func(_ js.Value, args []js.Value) any {
+		flags := t.Core.InputHandler().KittyFlags()
+		if flags&vt.KittyEventTypes == 0 {
+			return nil
+		}
+		ev := args[0]
+		kev := &vt.KeyboardEvent{
+			AltKey:   ev.Get("altKey").Bool(),
+			CtrlKey:  ev.Get("ctrlKey").Bool(),
+			ShiftKey: ev.Get("shiftKey").Bool(),
+			MetaKey:  ev.Get("metaKey").Bool(),
+			KeyCode:  ev.Get("keyCode").Int(),
+			Key:      ev.Get("key").String(),
+			Code:     ev.Get("code").String(),
+		}
+		if seq, ok := vt.KittyKey(kev, flags, vt.KittyRelease); ok {
+			t.Core.Input(seq, true)
 		}
 		return nil
 	}))

@@ -442,6 +442,9 @@ func (s *Session) run() {
 		s.mirrorClear()
 		s.soundsEnd()
 		s.dropListen = false
+		// A program that pushed kitty keyboard flags and did not pop them —
+		// crashed, say — does not leave the keys encoded for it.
+		s.Term.Core.InputHandler().ResetKittyKeyboard()
 		s.page.linkLine = "" // a link opens its program once
 		if s.afterCommand != nil {
 			s.afterCommand()

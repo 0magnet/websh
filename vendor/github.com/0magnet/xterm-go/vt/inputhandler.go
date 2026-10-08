@@ -198,7 +198,11 @@ type InputHandler struct {
 	windowTitle      string
 	iconName         string
 	windowTitleStack []string
-	iconNameStack    []string
+
+	// kittyMain and kittyAlt are each screen's stack of kitty keyboard
+	// flags (kittykeys.go).
+	kittyMain, kittyAlt []int
+	iconNameStack       []string
 
 	curAttrData           *AttributeData
 	eraseAttrDataInternal *AttributeData
@@ -300,6 +304,10 @@ func NewInputHandler(bufferService *BufferService, charsetService *CharsetServic
 	p.RegisterCsiHandler(FunctionID{Final: "s"}, func(params *Params) bool { return h.SaveCursor() })
 	p.RegisterCsiHandler(FunctionID{Final: "t"}, h.WindowOptionsHandler)
 	p.RegisterCsiHandler(FunctionID{Prefix: ">", Final: "q"}, h.ReportVersion)
+	p.RegisterCsiHandler(FunctionID{Prefix: "?", Final: "u"}, h.kittyQuery)
+	p.RegisterCsiHandler(FunctionID{Prefix: ">", Final: "u"}, h.kittyPush)
+	p.RegisterCsiHandler(FunctionID{Prefix: "<", Final: "u"}, h.kittyPop)
+	p.RegisterCsiHandler(FunctionID{Prefix: "=", Final: "u"}, h.kittySet)
 	p.RegisterCsiHandler(FunctionID{Final: "u"}, func(params *Params) bool { return h.RestoreCursor() })
 	p.RegisterCsiHandler(FunctionID{Intermediates: "'", Final: "}"}, h.InsertColumns)
 	p.RegisterCsiHandler(FunctionID{Intermediates: "'", Final: "~"}, h.DeleteColumns)
