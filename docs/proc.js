@@ -354,6 +354,13 @@
 		return active && active.env ? Object.assign({}, active.env) : null;
 	}
 
+	// argv is the arguments of the process whose slice is running — a copy —
+	// or null on the page's own time. A program TinyGo built is handed none
+	// any other way: its os.Args is only a placeholder.
+	function argvOf() {
+		return active && active.argv ? active.argv.slice() : null;
+	}
+
 	// ttyOf is the child's side: its terminal, or null when it has none.
 	function ttyOf(id) {
 		const t = ttys[id];
@@ -445,6 +452,7 @@
 			stdinPipe: stdinR,
 			id,
 			env: Object.assign({}, env),
+			argv: argv.slice(),
 		};
 		if (rec) myStdio.stderr = tailSink(rec, myStdio.stderr, opts.tail, opts.tailFilter || null);
 		for (const k of idEnvNames(opts)) myStdio.env[k] = id;
@@ -916,7 +924,7 @@ self.onmessage = async (ev) => {
 	globalThis.proc = {
 		installed: true,
 		spawn, spawnWorker, pipeSink, pipeSource, assets,
-		resize, tty: ttyOf, self, environ, cached,
+		resize, tty: ttyOf, self, environ, argv: argvOf, cached,
 		registerModule, registerURL, compileURL,
 		// The two page-lifetime registries. Exposed so a page can name them
 		// under its own globals (a child's Go signal handler registers into
