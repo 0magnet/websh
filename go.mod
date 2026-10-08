@@ -9,7 +9,7 @@ require (
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/winbox-go v0.0.1-0.20261004205602-89c284da50a4
 	github.com/0magnet/wisp v0.0.0-20261004205345-c7d0d339b3d7
-	github.com/0magnet/xterm-go v0.0.1-0.20261008133858-d4875785017a
+	github.com/0magnet/xterm-go v0.0.1-0.20261008134010-b06379d0eb39
 	github.com/benhoyt/goawk v1.32.0
 	github.com/gdamore/tcell/v3 v3.5.0
 	github.com/itchyny/gojq v0.12.19
