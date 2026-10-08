@@ -1,4 +1,12 @@
-# The websh host protocol
+# The progressive terminal
+
+A **progressive terminal** program is a terminal program first: it draws in
+cells and reads keys, and it runs in any terminal. Where its host can do
+more, it asks for more over its own output, and becomes more: pictures and
+working widgets over its cells, its own font, the page's title and address.
+The host realizes as much of the one program as it can; the program never
+has two interfaces. websh is such a host — a **capable host** — and this
+document is the protocol between the two.
 
 A program in a terminal writes text and reads keys. In websh the terminal is
 a web page, so the page can do more for the program than draw cells: lay a
@@ -107,7 +115,7 @@ program in the tab offered. The other rows apply as their features are built.
   "dpr": 1.0156,
   "cols": 208,
   "rows": 47,
-  "features": ["place", "place.input", "widget.offer"]
+  "features": ["place", "place.input", "event", "post", "widget.offer"]
 }
 ```
 
@@ -119,13 +127,14 @@ A program that does not know whether it is in websh at all sends the query
 and then DA1 (`CSI c`), which every terminal answers, and reads its input
 until the DA1 reply arrives. If the caps reply came first, the host speaks
 this protocol; if only DA1 came, it does not. No timeout is needed, and
-nothing is guessed. The Go package `hybrid` does exactly this (`hybrid.Probe`),
+nothing is guessed. The Go package `progressive` does exactly this (`progressive.Probe`),
 and hands back the terminal's input with nothing lost: keys typed during the
 probe, and the read it had waiting. `childtty.Open` runs it before tcell takes
-the terminal; `hybrid.Current` has the answer.
+the terminal; `progressive.Current` has the answer.
 
 `features` lists only what the host does now, for this program's trust. So
-far: `place` (images), `place.input`, `widget.offer` (not for remote output).
+far: `place` (images), `place.input`, `event`, `post`, and `widget.offer` (not
+for remote output).
 
 Standard queries a program may also use, answered by websh's terminal
 (xterm-go):
@@ -158,6 +167,7 @@ zoom and resize.
 | `widget` | a widget by name: one the page registered, or one the program offered (below) |
 | `fit` | for an image: `contain` (default), `cover`, `fill` |
 | `input` | `true`: the mouse over it is the placement's, not the program's |
+| `events` | `true`: what happens to it is reported to the program (Events) |
 
 The program keeps drawing its cells under every placement; that is what a
 terminal without placements shows. Placements go when the command ends.
@@ -167,11 +177,13 @@ terminal without placements shows. Placements go when the command ends.
 **Built** for page and local programs. A program running in the tab offers a
 widget by writing it into a plain registry on the page,
 `globalThis.webshWidgets[name] = {mount, owner}` (Go: `widget.Register`), and
-places it by name. websh calls `mount(el)` on a microtask of its own, never
-from its own stack: the program is a separate Go runtime, and two on one
-stack corrupt each other. What a program offered is withdrawn when it exits.
-`widget.Shown()` tells a program its terminal shows placements (today from
-`WEBSH_PLACEMENTS=1`; next, from Discovery).
+places it by name. websh calls `mount(el, port)` on a microtask of its own,
+never from its own stack: the program is a separate Go runtime, and two on
+one stack corrupt each other. `port` is the widget's end of its line to the
+program (Events); a widget that does not talk ignores it (Go:
+`widget.RegisterConn` gives it as a `*widget.Conn`). What a program offered
+is withdrawn when it exits. `widget.Shown()` tells a program its terminal
+shows placements, from Discovery.
 
 ### Shipped widgets
 
@@ -185,24 +197,53 @@ widget itself (an HTML document, or a wasm module with its loader). The host
 runs it in an `<iframe sandbox="allow-scripts">` with no same-origin access:
 it can draw and compute, and it can talk only to the program, through the
 host, by `postMessage`. Placing it by name works as for any widget. This is
-what makes a hybrid program work over ssh: the store's globe and card form,
+what makes a progressive terminal program work over ssh: the store's globe and card form,
 drawn on the server's behalf in the person's tab.
 
 ## Events
 
-**Planned.** A placement made with `"events": true` reports what happens to it
-as input, as a terminal reports mouse clicks:
+**Built.** A placement made with `"events": true` reports what happens to it on
+the program's input, as a terminal reports a mouse click:
 
     OSC 7337 ; event ; <id> ; <data> ST
 
-`<data>` is `{"type": "click" | "dblclick" | "message" | ..., ...}`. A widget
-(offered or shipped) posts its own events — "payment succeeded", "file
-chosen" — and the program reads them in its ordinary input loop. Going the
-other way, the program sends a message to a widget:
+| `type` | From | Fields |
+|---|---|---|
+| `click`, `dblclick`, `contextmenu` | the host, for a placement with `input` | `x`, `y` (fractions of the placement), `col`, `row` (the cell there, on the screen), `button` |
+| `message` | the widget in it | `data`: what the widget sent, as JSON |
+
+The program sends its widget a message:
 
     OSC 7337 ; post ; <id> ; <data> ST
 
-Programs that never asked for events never see one.
+`<data>` is JSON, given to the widget as it is.
+
+**The line.** Every widget a program offers gets a `MessagePort` (the host's
+`MessageChannel`, one per placement): what the widget posts there is the
+`data` of a message event, and a program's `post` arrives there. Messages are
+JSON text, both ways, so any language can be on either end. A port delivers
+later by itself, so the widget, the host and the program never run inside
+one another's call, and it is what a sandboxed iframe uses too: a shipped
+widget will speak the same line.
+
+Events are for the command that asked: one that arrives when nothing is
+running is dropped, and one the command never reads goes when it ends, as
+replies do. Programs that never asked for events never see one, and a host
+that offers none does not list `event` in Discovery.
+
+**Reading them.** In Go, `progressive.Filter(r)` takes the events out of a
+terminal's input — what was typed passes through untouched, an event split
+across reads is put back together, and a lone Escape is never held back —
+and delivers them on a channel. `childtty` applies it (`childtty.Events()`).
+An event is a `tcell.Event`, so a tcell program feeds them into its own queue
+and handles them in its one loop. `progressive.Place`, `Post`, `Remove` and
+`Clear` build the sequences. A program compiled into the page and drawing
+straight onto its terminal (xtcell) does not read its input, so it talks to
+its widgets in its own process instead.
+
+`cmd/ttydemo` is the example: its widget's button reaches the program as a
+message, the program counts it in its cells and posts the count back, and
+clicks on the widget are reported with their cell.
 
 ## Font
 

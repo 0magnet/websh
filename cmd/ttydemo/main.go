@@ -1,20 +1,26 @@
 //go:build js && wasm
 
-// ttydemo is a full-screen program for websh that is NOT compiled into the
-// page: built on its own, fetched into the shell's filesystem and run from
-// the PATH, as a separate wasm process with a terminal of its own.
+// ttydemo is a progressive terminal program: a full-screen program for any
+// terminal that does more where the host can. In websh it is NOT compiled
+// into the page — it is built on its own, fetched into the shell's
+// filesystem and run from the PATH, as a separate wasm process with a
+// terminal of its own.
 //
 //	curl -o /bin/ttydemo https://websh.magnetosphere.net/bin/ttydemo.wasm
 //	ttydemo
 //
-// It draws in cells with tcell, follows the terminal's size, takes every key
-// raw (Ctrl+C among them — q or Ctrl+C quits), and, where the terminal shows
-// placements, lays html of its own over a box of its cells: a widget offered
-// from this process, which the shell mounts and takes away again when it
-// exits.
+// It draws in cells with tcell, follows the terminal's size, and takes every
+// key raw (q or Ctrl+C quits). It asks the host what it offers
+// (progressive.Probe, through childtty) and shows the answer. Where the host
+// shows placements, it lays html of its own over a box of its cells: a widget
+// from this process with a button, and a line to the program both ways. A
+// press reaches the program as an event on its input; the program counts it
+// in its cells and posts the count back, which the widget shows. Clicks on
+// the box are reported with the cell under them.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -24,9 +30,18 @@ import (
 	"github.com/gdamore/tcell/v3/color"
 
 	"github.com/0magnet/websh/childtty"
-	"github.com/0magnet/websh/hybrid"
+	"github.com/0magnet/websh/progressive"
 	"github.com/0magnet/websh/widget"
 )
+
+// state is what the screen shows.
+type state struct {
+	placed  bool
+	keys    int
+	last    string
+	presses int
+	event   string
+}
 
 func main() {
 	// Everything goes to the terminal: tcell's cells and this program's own
@@ -49,27 +64,49 @@ func main() {
 		fmt.Fprintln(os.Stderr, "ttydemo:", err)
 		os.Exit(1)
 	}
-	placed := widget.Shown()
-	if placed {
-		widget.Register("ttydemo", mount)
+	st := &state{placed: widget.Shown(), last: "none yet", event: "none yet"}
+	if st.placed {
+		widget.RegisterConn("ttydemo", mount)
+	}
+	// The host's events join the keys in tcell's one queue.
+	if evs := childtty.Events(); evs != nil {
+		go func() {
+			for e := range evs {
+				s.EventQ() <- e
+			}
+		}()
 	}
 
-	last := "none yet"
-	keys := 0
+	say := func(seq string) { fmt.Fprint(out, seq) } //nolint:errcheck,gosec // the terminal; nowhere else to report to
 	for {
-		draw(s, out, placed, last, keys)
+		draw(s, say, st)
 		switch ev := (<-s.EventQ()).(type) {
 		case *tcell.EventResize:
 			s.Sync()
+		case *progressive.Event:
+			st.event = fmt.Sprintf("%s on %s", ev.Type, ev.ID)
+			switch ev.Type {
+			case "message":
+				var m struct {
+					Pressed bool `json:"pressed"`
+				}
+				if json.Unmarshal(ev.Data, &m) == nil && m.Pressed {
+					st.presses++
+					say(progressive.Post("demo", map[string]int{"count": st.presses}))
+				}
+				st.event += " " + string(ev.Data)
+			default:
+				st.event += fmt.Sprintf(" at cell %d,%d", ev.Col, ev.Row)
+			}
 		case *tcell.EventKey:
-			keys++
-			last = ev.Name()
+			st.keys++
+			st.last = ev.Name()
 			if ev.Key() == tcell.KeyCtrlC || ev.Str() == "q" {
-				if placed {
-					fmt.Fprint(out, "\x1b]7337;clear\x1b\\") //nolint:errcheck,gosec // the terminal; nowhere else to report to
+				if st.placed {
+					say(progressive.Clear())
 				}
 				s.Fini()
-				fmt.Fprintf(out, "ttydemo: %d keys\n", keys) //nolint:errcheck,gosec // the terminal; nowhere else to report to
+				say(fmt.Sprintf("ttydemo: %d keys, %d presses\n", st.keys, st.presses))
 				// TinyGo keeps a js program alive after main returns, for its
 				// callbacks; only an exit ends it.
 				os.Exit(0)
@@ -80,11 +117,10 @@ func main() {
 
 // draw lays out the screen: a frame, what the program knows, and the box the
 // widget goes over.
-func draw(s tcell.Screen, out io.Writer, placed bool, last string, keys int) {
+func draw(s tcell.Screen, say func(string), st *state) {
 	s.Clear()
 	w, h := s.Size()
 	frame := tcell.StyleDefault.Foreground(color.Teal)
-	text := tcell.StyleDefault
 	for x := 0; x < w; x++ {
 		s.Put(x, 0, "─", frame)
 		s.Put(x, h-1, "─", frame)
@@ -98,14 +134,15 @@ func draw(s tcell.Screen, out io.Writer, placed bool, last string, keys int) {
 	s.Put(0, h-1, "└", frame)
 	s.Put(w-1, h-1, "┘", frame)
 	host := "the host offers nothing beyond cells"
-	if c := hybrid.Current(); c != nil {
+	if c := progressive.Current(); c != nil {
 		host = fmt.Sprintf("host %s %s, trust %s, cell %.2fx%.2f px, offers %v", c.Host, c.Version, c.Trust, c.Cell.W, c.Cell.H, c.Features)
 	}
 	lines := []string{
-		"ttydemo: a separate wasm process in websh",
+		"ttydemo: a progressive terminal program, a separate wasm process in websh",
 		fmt.Sprintf("terminal %dx%d — resize the window", w, h),
-		fmt.Sprintf("keys %d, last %s", keys, last),
+		fmt.Sprintf("keys %d, last %s", st.keys, st.last),
 		host,
+		fmt.Sprintf("widget presses counted here: %d; last event: %s", st.presses, st.event),
 		"q or Ctrl+C quits",
 	}
 	for i, l := range lines {
@@ -113,33 +150,52 @@ func draw(s tcell.Screen, out io.Writer, placed bool, last string, keys int) {
 	}
 	// The box: cells a terminal without placements shows, and the widget's
 	// place where it has them.
-	bx, by, bw, bh := 2, 7, min(36, w-4), min(8, h-9)
+	bx, by, bw, bh := 2, 8, min(40, w-4), min(8, h-10)
 	if bw > 2 && bh > 2 {
 		for y := by; y < by+bh; y++ {
 			for x := bx; x < bx+bw; x++ {
-				s.Put(x, y, "░", text.Foreground(color.Gray))
+				s.Put(x, y, "░", tcell.StyleDefault.Foreground(color.Gray))
 			}
 		}
 		s.PutStr(bx+1, by+1, "cells under the widget")
 	}
 	s.Show()
-	if placed && bw > 2 && bh > 2 {
-		d := fmt.Sprintf(`{"row":%d,"col":%d,"w":%d,"h":%d,"widget":"ttydemo"}`, by, bx, bw, bh)
-		fmt.Fprint(out, "\x1b]7337;place;demo;"+b64(d)+"\x1b\\") //nolint:errcheck,gosec // the terminal; nowhere else to report to
+	if st.placed && bw > 2 && bh > 2 {
+		say(progressive.Place("demo", progressive.Placement{Row: by, Col: bx, W: bw, H: bh, Widget: "ttydemo", Input: true, Events: true}))
 	}
 }
 
-// mount fills a placement with html made in this process.
-func mount(el js.Value) func() {
+// mount fills the placement with html made in this process: a button that
+// tells the program, and a line showing what the program says back.
+func mount(el js.Value, c *widget.Conn) func() {
 	doc := js.Global().Get("document")
 	d := doc.Call("createElement", "div")
-	d.Get("style").Set("cssText", "width:100%;height:100%;display:flex;align-items:center;justify-content:center;"+
+	d.Get("style").Set("cssText", "width:100%;height:100%;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;"+
 		"font:14px sans-serif;color:#fff;background:linear-gradient(135deg,#0b7285,#5f3dc4)")
-	d.Set("textContent", "html from ttydemo's own process")
+	b := doc.Call("createElement", "button")
+	b.Set("textContent", "press: tell the program")
+	b.Get("style").Set("cssText", "font:14px sans-serif;padding:6px 12px;cursor:pointer")
+	said := doc.Call("createElement", "div")
+	said.Set("textContent", "the program has said nothing yet")
+	d.Call("append", b, said)
 	el.Call("append", d)
-	return func() { d.Call("remove") }
-}
 
-func b64(s string) string {
-	return js.Global().Call("btoa", s).String()
+	press := js.FuncOf(func(js.Value, []js.Value) any {
+		c.Send(map[string]bool{"pressed": true}) //nolint:errcheck,gosec // a host without a line drops it
+		return nil
+	})
+	b.Call("addEventListener", "click", press)
+	c.OnMessage(func(data []byte) {
+		var m struct {
+			Count int `json:"count"`
+		}
+		if json.Unmarshal(data, &m) == nil {
+			said.Set("textContent", fmt.Sprintf("the program counted %d", m.Count))
+		}
+	})
+	return func() {
+		b.Call("removeEventListener", "click", press)
+		press.Release()
+		d.Call("remove")
+	}
 }

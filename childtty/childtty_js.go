@@ -25,22 +25,40 @@ import (
 	"github.com/gdamore/tcell/v3"
 	"github.com/gdamore/tcell/v3/tty"
 
-	"github.com/0magnet/websh/hybrid"
+	"github.com/0magnet/websh/progressive"
 )
 
 // Open returns this program's terminal, or false when it has none. It asks
-// the host what it offers first (hybrid.Probe), before anything else reads
-// the terminal; hybrid.Current has the answer.
+// the host what it offers first (progressive.Probe), before anything else reads
+// the terminal; progressive.Current has the answer. The host's events on the
+// program's placements are taken out of the input and arrive on Events.
 func Open() (tty.Tty, bool) {
 	t, ok := proc.Term()
 	if !ok {
 		return nil, false
 	}
 	c := &childTty{t: t}
-	_, c.in, _ = hybrid.Probe(t, t, probeWait) //nolint:errcheck // no answer means cells only; c.in is the input from here either way
+	_, in, _ := progressive.Probe(t, t, probeWait) //nolint:errcheck // no answer means cells only; in is the input from here either way
+	c.in, events = progressive.Filter(in)
 	t.OnResize(c.resized)
 	return c, true
 }
+
+// events carries the host's events once Open has run.
+var events <-chan *progressive.Event
+
+// Events is what happens to this program's placements made with Events —
+// clicks, and messages from their widgets — as the host reports it. Each is a
+// tcell.Event too, so a tcell program can pass them into its own queue:
+//
+//	go func() {
+//		for e := range childtty.Events() {
+//			screen.EventQ() <- e
+//		}
+//	}()
+//
+// It is nil before Open, and where there is no terminal.
+func Events() <-chan *progressive.Event { return events }
 
 // probeWait is how long a terminal that answers nothing is waited for.
 const probeWait = 2 * time.Second

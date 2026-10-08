@@ -5,6 +5,8 @@ package web
 import (
 	"io"
 	"sync"
+
+	"github.com/0magnet/websh/progressive"
 )
 
 // inQueue is the running command's stdin: what is typed, in order, and what
@@ -98,5 +100,14 @@ func (q *inQueue) Read(p []byte) (int, error) {
 			return 0, io.EOF
 		}
 		q.more.Wait()
+	}
+}
+
+// event reports something that happened to placement id to the program on
+// the terminal, on its input. Like a reply, it is for the command running
+// now: none is queued at the prompt, and one it never reads goes with it.
+func (s *Session) event(id string, e *progressive.Event) {
+	if s.running && s.in != nil {
+		s.in.push(inItem{b: []byte(progressive.EventSeq(id, e)), reply: true})
 	}
 }

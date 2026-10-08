@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/0magnet/websh/hybrid"
+	"github.com/0magnet/websh/progressive"
 	"syscall/js"
 
 	"github.com/0magnet/winbox-go"
@@ -50,12 +50,17 @@ func (s *Session) wireViewer(el js.Value) {
 		p.reposition()
 		switch cmd {
 		case "caps?":
-			s.Term.Core.Input(hybrid.Reply(s.caps(p)), false)
+			s.Term.Core.Input(progressive.Reply(s.caps(p)), false)
 		case "place":
 			id, enc, _ := strings.Cut(arg, ";")
 			var d placeData
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
 				p.place(id, d)
+			}
+		case "post":
+			id, enc, _ := strings.Cut(arg, ";")
+			if b, err := base64.StdEncoding.DecodeString(enc); err == nil {
+				p.post(id, b)
 			}
 		case "remove":
 			p.remove(arg)

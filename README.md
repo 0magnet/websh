@@ -127,16 +127,24 @@ built by Go or by TinyGo, as a program runs in a terminal: its output appears
 as it is written, what is typed reaches its stdin, and Ctrl+C stops it. With
 its stdout on the terminal it has a terminal of its own — the size, resizes,
 raw mode — so a full-screen program works: `childtty.NewScreen()` is a tcell
-screen on it. It is told `WEBSH_PLACEMENTS=1` (`widget.Shown()`), and widgets
-it offers are withdrawn when it exits.
+screen on it. Widgets it offers are withdrawn when it exits.
+
+Such a program is a **progressive terminal** program: a terminal program first,
+which asks its host for more over its own output and becomes more where the
+host can do it. [PROTOCOL.md](PROTOCOL.md) is the protocol: the program asks
+what the host offers (`progressive.Probe`, which `childtty` runs), lays
+pictures and its own widgets over its cells, and talks with those widgets
+both ways — what happens to them arrives on its input as events, and it
+posts messages back.
 
 ```sh
 curl -o /bin/ttydemo https://websh.magnetosphere.net/bin/ttydemo.wasm
 ttydemo
 ```
 
-`cmd/ttydemo` is that program: tcell cells, keys, resizes, and a widget of its
-own over a box of its cells.
+`cmd/ttydemo` is that program: tcell cells, keys, resizes, what the host
+answered, and a widget of its own over a box of its cells whose button the
+program counts and answers.
 
 ## Architecture
 

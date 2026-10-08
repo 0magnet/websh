@@ -3,11 +3,13 @@
 package web
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall/js"
 
+	"github.com/0magnet/websh/progressive"
 	offer "github.com/0magnet/websh/widget"
 )
 
@@ -70,14 +72,22 @@ type placeData struct {
 	Fit string `json:"fit"`
 	// Input gives the placement the mouse over it, instead of the program.
 	Input bool `json:"input"`
+	// Events reports what happens to the placement to the program, on its
+	// input: clicks on it (with Input), and messages from its widget.
+	Events bool `json:"events"`
 }
 
 // A placement is one element over the cells.
 type placement struct {
+	id      string
 	d       placeData
 	el      js.Value
 	unmount func()
 	stops   []js.Func // what keeps its mouse from the terminal
+	// port is the host's end of an offered widget's line to the program
+	// (widget.Conn), and onMsg its listener.
+	port  js.Value
+	onMsg js.Func
 }
 
 // placements is a session's layer of placements: one element over the
@@ -119,7 +129,7 @@ func (p *placements) place(id string, d placeData) {
 		return
 	}
 	if old := p.by[id]; old != nil {
-		if old.d.URL == d.URL && old.d.Widget == d.Widget && old.d.Fit == d.Fit && old.d.Input == d.Input {
+		if old.d.URL == d.URL && old.d.Widget == d.Widget && old.d.Fit == d.Fit && old.d.Input == d.Input && old.d.Events == d.Events {
 			old.d = d // same content: only moved
 			p.position(old)
 			return
@@ -127,7 +137,7 @@ func (p *placements) place(id string, d placeData) {
 		p.remove(id)
 	}
 	doc := js.Global().Get("document")
-	pl := &placement{d: d}
+	pl := &placement{id: id, d: d}
 	switch {
 	case d.Widget != "":
 		// The page's own widgets first, then those a program running here
@@ -150,7 +160,7 @@ func (p *placements) place(id string, d placeData) {
 		if w != nil {
 			pl.unmount = w(pl.el)
 		} else {
-			mountOffered(pl, offered)
+			p.mountOffered(pl, offered)
 		}
 	case strings.HasPrefix(d.URL, "https://") || strings.HasPrefix(d.URL, "http://"):
 		pl.el = doc.Call("createElement", "img")
@@ -167,6 +177,9 @@ func (p *placements) place(id string, d placeData) {
 	}
 	if d.Input {
 		p.takeInput(pl)
+		if d.Events {
+			p.reportClicks(pl)
+		}
 	}
 	p.by[id] = pl
 	p.position(pl)
@@ -213,6 +226,11 @@ func (p *placements) remove(id string) {
 	for _, f := range pl.stops {
 		f.Release()
 	}
+	if pl.port.Truthy() {
+		pl.port.Set("onmessage", js.Null())
+		pl.port.Call("close")
+	}
+	pl.onMsg.Release()
 	pl.el.Call("remove")
 }
 
@@ -220,14 +238,35 @@ func (p *placements) remove(id string) {
 // unmount belong to another Go runtime, so they run on microtasks of their
 // own (package widget), never from this one's stack; a placement taken away
 // before its widget is up has it taken down as soon as it is.
-func mountOffered(pl *placement, mount js.Value) {
+//
+// The widget gets the other end of a MessageChannel: what it sends there
+// reaches the program as an event, when the placement asked for events, and
+// what the program posts reaches it. A port delivers later, by itself, which
+// is what keeps the two runtimes apart.
+func (p *placements) mountOffered(pl *placement, mount js.Value) {
+	ch := js.Global().Get("MessageChannel").New()
+	pl.port = ch.Get("port1")
+	if pl.d.Events {
+		pl.onMsg = js.FuncOf(func(_ js.Value, args []js.Value) any {
+			if len(args) == 0 {
+				return nil
+			}
+			d := args[0].Get("data")
+			if d.Type() != js.TypeString || !json.Valid([]byte(d.String())) {
+				return nil // messages are JSON text
+			}
+			p.s.event(pl.id, &progressive.Event{Type: "message", Data: json.RawMessage(d.String())})
+			return nil
+		})
+		pl.port.Set("onmessage", pl.onMsg)
+	}
 	gone := false
 	var un js.Value
 	pl.unmount = func() {
 		gone = true
 		offer.Unmount(un)
 	}
-	offer.Mount(mount, pl.el, func(u js.Value) {
+	offer.Mount(mount, pl.el, ch.Get("port2"), func(u js.Value) {
 		if gone {
 			offer.Unmount(u)
 			return
@@ -255,6 +294,41 @@ func (p *placements) takeInput(pl *placement) {
 			if e.Get("type").String() == "mousedown" {
 				e.Call("preventDefault")
 			}
+			return nil
+		})
+		pl.el.Call("addEventListener", name, f)
+		pl.stops = append(pl.stops, f)
+	}
+}
+
+// post gives the widget in placement id a message from the program.
+func (p *placements) post(id string, data []byte) {
+	pl := p.by[id]
+	if pl == nil || !pl.port.Truthy() || !json.Valid(data) {
+		return
+	}
+	pl.port.Call("postMessage", string(data))
+}
+
+// reportClicks tells the program of clicks on a placement that has the mouse
+// and asked for events: where on it, and the cell under that point.
+func (p *placements) reportClicks(pl *placement) {
+	for _, name := range []string{"click", "dblclick", "contextmenu"} {
+		f := js.FuncOf(func(_ js.Value, args []js.Value) any {
+			e := args[0]
+			r := pl.el.Call("getBoundingClientRect")
+			w, h := r.Get("width").Float(), r.Get("height").Float()
+			if w <= 0 || h <= 0 {
+				return nil
+			}
+			x := (e.Get("clientX").Float() - r.Get("left").Float()) / w
+			y := (e.Get("clientY").Float() - r.Get("top").Float()) / h
+			ev := &progressive.Event{
+				Type: e.Get("type").String(), X: x, Y: y, Button: e.Get("button").Int(),
+				Col: pl.d.Col + min(pl.d.W-1, max(0, int(x*float64(pl.d.W)))),
+				Row: pl.d.Row + min(pl.d.H-1, max(0, int(y*float64(pl.d.H)))),
+			}
+			p.s.event(pl.id, ev)
 			return nil
 		})
 		pl.el.Call("addEventListener", name, f)

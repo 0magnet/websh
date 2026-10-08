@@ -1,4 +1,4 @@
-// Package hybrid is how a terminal program learns what its host can do
+// Package progressive is how a terminal program learns what its host can do
 // beyond cells, by asking it — Discovery in websh's PROTOCOL.md. It is plain
 // Go, for any terminal: in websh the answer says what the page offers (a
 // placement, a widget, a font) and how far the host trusts this program's
@@ -10,7 +10,7 @@
 // host speaks the protocol, and a DA1 reply alone means it does not. Nothing
 // is guessed and no timeout is needed except for a terminal that answers
 // nothing at all.
-package hybrid
+package progressive
 
 import (
 	"bytes"
@@ -76,7 +76,7 @@ func Current() *Caps { return current.Load() }
 func Set(c *Caps) { current.Store(c) }
 
 // ErrNoAnswer is a terminal that answered neither query in time.
-var ErrNoAnswer = errors.New("hybrid: the terminal did not answer")
+var ErrNoAnswer = errors.New("progressive: the terminal did not answer")
 
 // Probe asks the host over w, reads its answer from r and records it
 // (Current). caps is nil where the host speaks no protocol.

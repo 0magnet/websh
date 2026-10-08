@@ -1,4 +1,4 @@
-package hybrid
+package progressive
 
 import (
 	"bytes"
