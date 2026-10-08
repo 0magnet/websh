@@ -133,8 +133,8 @@ probe, and the read it had waiting. `childtty.Open` runs it before tcell takes
 the terminal; `progressive.Current` has the answer.
 
 `features` lists only what the host does now, for this program's trust. So
-far: `place` (images), `place.input`, `event`, `post`, and `widget.offer` (not
-for remote output).
+far: `place` (images), `place.input`, `event`, `post`, `ship`, and `widget.offer`
+and `font` (not for remote output).
 
 Standard queries a program may also use, answered by websh's terminal
 (xterm-go):
@@ -264,21 +264,28 @@ clicks on the widget are reported with their cell.
 
 ## Font
 
-**Planned**, page and local only. A program brings the font it is designed
-for, as bytes it carries (Go: `//go:embed`):
+**Built**, page and local only. A program brings the font it is designed
+for, as bytes: carried in it (Go: `//go:embed`), or fetched from where it
+belongs (the store reads its site's `/font.css`).
 
-    OSC 7337 ; font ; <data> ; <chunk> ST     (repeated, "more": true)
+    OSC 7337 ; font ; <data> ; <chunk> ST     (repeated while "more": true)
     OSC 7337 ; font ; reset ST
 
-`<data>` is `{"family": "mononoki", "size": 15, "format": "woff2", "more":
-bool}`. The host loads it with the FontFace API, switches the terminal to it,
-measures the new cell size and resizes the program's terminal, which the
-program hears as an ordinary resize. The host caches fonts by content for the
-session, and puts its own font back when the program exits.
+`<data>` is `{"family": "mononoki", "size": 15, "more": bool}` (size in CSS
+pixels, optional), and the chunks are the font file, WOFF2, WOFF, TTF or
+OTF, at most 4 MB. The host loads it with the FontFace API under a name
+made from its content, so it never stands in for a page font of the same
+name and a second run reuses it, and draws the terminal in it with its own
+font behind for missing glyphs. The cells are measured again and the
+terminal refit, which the program hears as an ordinary resize. When the
+program exits, or sends `reset`, the host's font comes back; the size goes
+back only if the program set one, so a zoom the person made stays. A font
+that finishes loading after its program has ended is not used. Go:
+`progressive.Font(family, size, data)`, `progressive.FontReset()`.
 
 A remote program's font request is ignored: a font in a person's terminal is
 theirs, and a program on another machine reaching for it is reaching for a
-control in the wrong place.
+control in the wrong place. Discovery lists `font` only where it is allowed.
 
 ## The page
 

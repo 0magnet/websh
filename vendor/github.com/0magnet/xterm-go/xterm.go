@@ -1182,11 +1182,30 @@ func (t *Terminal) RefreshGlyphs() {
 // The WebGL renderer holds a texture atlas built for the old cell, so it is
 // rebuilt: nothing else here knows how to tell it its glyphs changed size.
 func (t *Terminal) SetFontSize(px float64) {
-	if !t.opened || px <= 0 || px == t.Core.Options.FontSize {
+	t.SetFont(t.Core.Options.FontFamily, px)
+}
+
+// SetFontFamily draws the terminal in family (a CSS font-family list) from
+// now on, measuring its cells again: a program that brings its own font, a
+// person who prefers another. A font loaded with the FontFace API must have
+// finished loading first, or the cells are measured in its fallback.
+func (t *Terminal) SetFontFamily(family string) {
+	t.SetFont(family, t.Core.Options.FontSize)
+}
+
+// FontFamily is the font-family list the terminal is drawing in.
+func (t *Terminal) FontFamily() string { return t.Core.Options.FontFamily }
+
+// SetFont changes family and size together, with one measure and one
+// rebuild of the renderer.
+func (t *Terminal) SetFont(family string, px float64) {
+	if !t.opened || px <= 0 || family == "" || (px == t.Core.Options.FontSize && family == t.Core.Options.FontFamily) {
 		return
 	}
 	t.Core.Options.FontSize = px
+	t.Core.Options.FontFamily = family
 	t.element.Get("style").Set("fontSize", jsPx(px))
+	t.element.Get("style").Set("fontFamily", family)
 	t.measureCharSize()
 	t.refreshRowEls()
 	t.updateScrollArea()

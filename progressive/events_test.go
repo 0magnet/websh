@@ -139,3 +139,44 @@ func TestShip(t *testing.T) {
 		t.Error("an empty widget is still one sequence")
 	}
 }
+
+// TestFont: a font goes in chunks like a shipped widget, with its family
+// and size in each chunk's meta.
+func TestFont(t *testing.T) {
+	data := make([]byte, 7000)
+	for i := range data {
+		data[i] = byte(i)
+	}
+	seqs := Font("mononoki", 15, data)
+	if len(seqs) != 3 {
+		t.Fatalf("%d sequences", len(seqs))
+	}
+	var got []byte
+	for i, s := range seqs {
+		body := strings.TrimSuffix(strings.TrimPrefix(s, "\x1b]7337;font;"), "\x1b\\")
+		meta, chunk, _ := strings.Cut(body, ";")
+		m, err := base64.StdEncoding.DecodeString(meta)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var md struct {
+			Family string  `json:"family"`
+			Size   float64 `json:"size"`
+			More   bool    `json:"more"`
+		}
+		if err := json.Unmarshal(m, &md); err != nil || md.Family != "mononoki" || md.Size != 15 || md.More != (i < 2) {
+			t.Errorf("chunk %d meta %s", i, m)
+		}
+		b, err := base64.StdEncoding.DecodeString(chunk)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, b...)
+	}
+	if string(got) != string(data) {
+		t.Error("the font did not survive the trip")
+	}
+	if FontReset() != "\x1b]7337;font;reset\x1b\\" {
+		t.Error("reset")
+	}
+}

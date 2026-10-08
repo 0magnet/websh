@@ -127,7 +127,12 @@ type Session struct {
 	rawInput bool
 
 	// in is the running command's stdin. See inQueue.
-	in        *inQueue
+	in *inQueue
+	// cmds counts the commands run, so something a command started that
+	// finishes after it (a font loading) knows it is too late.
+	cmds int
+	// fonts is a program's font, while it has one (font.go).
+	fonts     fontState
 	cancelRun context.CancelFunc
 	closed    bool
 
@@ -398,6 +403,7 @@ func (s *Session) run() {
 		// next prompt as it would in bash.
 		ctx, cancel := context.WithCancel(context.Background())
 		s.in.next() // replies to the last command's queries are not this one's
+		s.cmds++
 		s.cancelRun, s.running = cancel, true
 
 		_, err := s.Shell.Run(ctx, line)
@@ -415,6 +421,7 @@ func (s *Session) run() {
 			s.placements.clear()
 			s.placements.forgetShipped()
 		}
+		s.fontRestore()
 		if s.afterCommand != nil {
 			s.afterCommand()
 		}
