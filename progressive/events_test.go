@@ -180,3 +180,20 @@ func TestFont(t *testing.T) {
 		t.Error("reset")
 	}
 }
+
+// TestPageSequences: the page's sequences are the standard ones where there
+// is a standard.
+func TestPageSequences(t *testing.T) {
+	if Title("x") != "\x1b]2;x\x1b\\" {
+		t.Error("title")
+	}
+	if Copy("hi") != "\x1b]52;c;aGk=\x1b\\" {
+		t.Error("copy")
+	}
+	if got := Download("a.txt", []byte("hi")); got != "\x1b]1337;File=name=YS50eHQ=;size=2;inline=0:aGk=\x07" {
+		t.Errorf("download %q", got)
+	}
+	if !strings.HasPrefix(Page("/p/1", "t"), "\x1b]7337;page;") {
+		t.Error("page")
+	}
+}

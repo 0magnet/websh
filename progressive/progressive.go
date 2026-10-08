@@ -49,6 +49,17 @@ type Caps struct {
 	Cols     int      `json:"cols"`
 	Rows     int      `json:"rows"`
 	Features []string `json:"features"`
+	// Path is where a link that opened this program pointed in it (Page),
+	// for the program to open there; empty for none.
+	Path string `json:"path,omitempty"`
+}
+
+// LinkPath is where a link that opened this program pointed in it, or "".
+func (c *Caps) LinkPath() string {
+	if c == nil {
+		return ""
+	}
+	return c.Path
 }
 
 // Has reports whether the host offers feature. A nil Caps offers nothing.

@@ -68,10 +68,13 @@ func main() {
 			})
 	}
 
-	if _, err := web.NewSession(container, opt); err != nil {
+	sess, err := web.NewSession(container, opt)
+	if err != nil {
 		js.Global().Get("console").Call("error", err.Error())
 		return
 	}
+	// A link a program made opens with its command typed at the prompt.
+	sess.OpenLink()
 	select {}
 }
 

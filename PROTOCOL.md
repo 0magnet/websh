@@ -133,8 +133,9 @@ probe, and the read it had waiting. `childtty.Open` runs it before tcell takes
 the terminal; `progressive.Current` has the answer.
 
 `features` lists only what the host does now, for this program's trust. So
-far: `place` (images), `place.input`, `event`, `post`, `ship`, and `widget.offer`
-and `font` (not for remote output).
+far: `place` (images), `place.input`, `event`, `post`, `ship`, `download`,
+`clipboard`, and `widget.offer`, `font`, `title`, `page` (not for remote
+output).
 
 Standard queries a program may also use, answered by websh's terminal
 (xterm-go):
@@ -289,28 +290,45 @@ control in the wrong place. Discovery lists `font` only where it is allowed.
 
 ## The page
 
-**Planned**, page and local only.
+**Built** (title and address), page and local only.
 
 | Request | Sequence |
 |---|---|
-| Title | standard OSC 0 / OSC 2 (sets `document.title` while the program runs) |
-| Address | `OSC 7337 ; page ; <data> ST`, `{"path": "/p/A123", "title": "..."}`: `history.replaceState`, so what the program shows can be linked to and opened again |
-| Favicon | `OSC 7337 ; icon ; <data> ST`, `{"url": ...}` |
+| Title | standard OSC 0 / OSC 2: `document.title` while the program runs |
+| Address | `OSC 7337 ; page ; <data> ST`, `{"path": "/p/A123", "title": "..."}` |
+| Favicon | `OSC 7337 ; icon ; <data> ST`, `{"url": ...}` (planned) |
 
-An address the program sets is what a link to the page opens: the page hands
-it to the program at start (the program reads its first path from Discovery's
-reply, `"path"`). A TUI page becomes something that can be shared, bookmarked
-and indexed.
+**The address.** The host puts the running command and the program's path
+in the page's address, in the fragment —
+`#run=<command line>&at=<path>` — which every host, a static one too, hands
+back untouched, so what the program shows can be linked to, bookmarked and
+shared. The title, if given, becomes the page's.
+
+**A link.** When the page is opened by such an address, the host types the
+command at the prompt and does **not** run it: a link that ran commands
+would let any page reach this shell's files. The person presses Enter; the
+program the command starts finds where the link pointed in Discovery's
+reply, `"path"` (Go: `progressive.Current().LinkPath()`), and opens there.
+It is handed once, to the command the link carried.
+
+Title and address go back to what they were when the program exits. Go:
+`progressive.Title`, `progressive.Page`. The store announces its pages as
+the site's own paths (`/p/<part>`, `/cat/<category>`), so a link to a
+product opens the store at that product.
+
+Search engines do not run a page's programs, so an address alone does not
+make a page indexed; a site that wants that serves the same paths as HTML
+too, as magnetosphere.net does (Accessibility and search).
 
 ## Files, notifications, clipboard, sound
 
 | What | Protocol | Status |
 |---|---|---|
 | Hyperlinks | OSC 8 | built (xterm-go) |
-| Clipboard write | OSC 52 | planned |
+| Clipboard write | OSC 52 (`progressive.Copy`); reading is refused | built; remote asks the person |
+| Downloads offered | iTerm2 OSC 1337 `File=` with `inline=0` (`progressive.Download`), one sequence, under 10 MB | built; remote asks the person |
 | Notifications | OSC 9, OSC 777, kitty OSC 99 | planned |
 | Inline images | iTerm2 OSC 1337 `File=` (inline=1), kitty graphics | planned |
-| Downloads offered | iTerm2 OSC 1337 `File=` (inline=0) | planned |
 | Files dropped onto the terminal | `OSC 7337 ; drop ; <data> ST` on input, the file written to the shell's filesystem | planned |
 | Sound | `OSC 7337 ; sound ; <data> ST` (a URL or shipped bytes) | planned |
 | Focus in/out | mode 1004 (`CSI I`, `CSI O`) | built |
@@ -342,8 +360,7 @@ as type-ahead does in any terminal.
 
 Found while writing this, to be fixed rather than worked around:
 
-- OSC 0/2 titles are parsed and go nowhere.
-- No OSC 52, no kitty keyboard protocol.
+- No kitty keyboard protocol.
 - Fixed: replies taken as typing, unanswered OSC 10/11 and CSI 14/16 t, CSI t
   reports switched off, focus events never sent, no XTVERSION.
 

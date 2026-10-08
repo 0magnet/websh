@@ -45,6 +45,14 @@ func (s *Session) wireViewer(el js.Value) {
 	v := &viewer{root: el}
 	p := newPlacements(s, el)
 	s.placements = p
+	s.Term.Core.InputHandler().RegisterOscHandler(1337, func(data string) bool {
+		s.download(data)
+		return true
+	})
+	s.Term.Core.InputHandler().RegisterOscHandler(52, func(data string) bool {
+		s.clipboard(data)
+		return true
+	})
 	s.Term.Core.InputHandler().RegisterOscHandler(ViewerOSC, func(data string) bool {
 		cmd, arg, _ := strings.Cut(data, ";")
 		p.reposition()
@@ -57,6 +65,8 @@ func (s *Session) wireViewer(el js.Value) {
 			if b, err := base64.StdEncoding.DecodeString(enc); err == nil && json.Unmarshal(b, &d) == nil && id != "" {
 				p.place(id, d)
 			}
+		case "page":
+			s.setPage(arg)
 		case "font":
 			s.font(arg)
 		case "ship":

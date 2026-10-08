@@ -132,7 +132,12 @@ type Session struct {
 	// finishes after it (a font loading) knows it is too late.
 	cmds int
 	// fonts is a program's font, while it has one (font.go).
-	fonts     fontState
+	fonts fontState
+	// page is the page's title and address before a program changed them,
+	// and the link the page was opened by (page.go).
+	page pageState
+	// line is the command line running now.
+	line      string
 	cancelRun context.CancelFunc
 	closed    bool
 
@@ -249,6 +254,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	sh.WakeStdin = func() { s.in.push(inItem{wake: true}) }
 
 	s.Term.Core.OnData = s.onData
+	s.Term.OnTitleChange = s.setTitle
 	// The terminal's replies are for the program that asked: never for the
 	// line editor, never echoed, and dropped when nothing is running.
 	s.Term.Core.OnReply = func(data string) {
@@ -404,6 +410,7 @@ func (s *Session) run() {
 		ctx, cancel := context.WithCancel(context.Background())
 		s.in.next() // replies to the last command's queries are not this one's
 		s.cmds++
+		s.line = line
 		s.cancelRun, s.running = cancel, true
 
 		_, err := s.Shell.Run(ctx, line)
@@ -422,6 +429,8 @@ func (s *Session) run() {
 			s.placements.forgetShipped()
 		}
 		s.fontRestore()
+		s.pageRestore()
+		s.page.linkLine = "" // a link opens its program once
 		if s.afterCommand != nil {
 			s.afterCommand()
 		}

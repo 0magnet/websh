@@ -47,6 +47,7 @@ type state struct {
 	presses int
 	shipped int
 	event   string
+	did     string // what the last page key did
 }
 
 func main() {
@@ -117,6 +118,20 @@ func main() {
 		case *tcell.EventKey:
 			st.keys++
 			st.last = ev.Name()
+			switch ev.Str() {
+			case "t":
+				say(progressive.Title(fmt.Sprintf("ttydemo: %d keys", st.keys)))
+				st.did = "set the page's title"
+			case "p":
+				say(progressive.Page(fmt.Sprintf("/presses/%d", st.presses+st.shipped), "ttydemo"))
+				st.did = "put /presses/N in the page's address: reload to open it again"
+			case "d":
+				say(progressive.Download("ttydemo.txt", []byte(fmt.Sprintf("ttydemo: %d keys, %d presses\n", st.keys, st.presses+st.shipped))))
+				st.did = "offered ttydemo.txt"
+			case "c":
+				say(progressive.Copy(fmt.Sprintf("ttydemo counted %d presses", st.presses+st.shipped)))
+				st.did = "copied a line to the clipboard"
+			}
 			if ev.Key() == tcell.KeyCtrlC || ev.Str() == "q" {
 				if st.placed {
 					say(progressive.Clear())
@@ -159,14 +174,15 @@ func draw(s tcell.Screen, say func(string), st *state) {
 		fmt.Sprintf("keys %d, last %s", st.keys, st.last),
 		host,
 		fmt.Sprintf("presses counted here: offered widget %d, shipped widget %d; last event: %s", st.presses, st.shipped, st.event),
-		"q or Ctrl+C quits",
+		"t title · p address (a link back here) · d download · c copy · q or Ctrl+C quits" + didNote(st.did),
+		openedAt(),
 	}
 	for i, l := range lines {
 		s.PutStr(2, 1+i, l)
 	}
 	// The box: cells a terminal without placements shows, and the widget's
 	// place where it has them.
-	bx, by, bw, bh := 2, 8, min(40, w-4), min(8, h-10)
+	bx, by, bw, bh := 2, 9, min(40, w-4), min(8, h-11)
 	if bw > 2 && bh > 2 {
 		for y := by; y < by+bh; y++ {
 			for x := bx; x < bx+bw; x++ {
@@ -242,4 +258,19 @@ func mount(el js.Value, c *widget.Conn) func() {
 		press.Release()
 		d.Call("remove")
 	}
+}
+
+func didNote(did string) string {
+	if did == "" {
+		return ""
+	}
+	return "  — " + did
+}
+
+// openedAt says where a link that opened this program pointed in it.
+func openedAt() string {
+	if p := progressive.Current().LinkPath(); p != "" {
+		return "opened by a link, at " + p
+	}
+	return ""
 }
