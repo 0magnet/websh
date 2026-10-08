@@ -113,6 +113,7 @@ is base64 of a JSON object. The verbs:
 - **Input and access:** `listen` asks for file drops, `mirror` publishes an accessible rendition of what is shown.
 
 [PROTOCOL.md](PROTOCOL.md) has the data each takes.
+
 A placement takes no input unless it asks with `"input": true`: then the mouse
 over it goes to it (a widget can be dragged or zoomed, say) and not to the
 program, which keeps the keys. What a command placed is taken away when it ends. A widget is one the page
