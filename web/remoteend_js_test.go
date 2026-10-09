@@ -47,6 +47,7 @@ func TestARemoteProgramsEndIsSeen(t *testing.T) {
 		{"remote, prompt mark with options", "remote", "\x1b]133;A;cl=m\x07", true},
 		{"remote, command mark", "remote", "\x1b]133;C\x1b\\", false},
 		{"remote, plain output", "remote", "hello\r\n", false},
+		{"terminal, alternate screen left", "terminal", "\x1b[?1049h\x1b[?1049l", true},
 		{"local, alternate screen left", "local", "\x1b[?1049h\x1b[?1049l", false},
 		{"page, reset", "page", "\x1bc", false},
 	} {
@@ -61,6 +62,7 @@ func TestARemoteProgramsEndIsSeen(t *testing.T) {
 	}{
 		{"remote", "\x03", true},
 		{"remote", "\x1c", true},
+		{"terminal", "\x03", true}, // a desktop terminal's pty: the remote rules
 		{"remote", "q", false},
 		{"local", "\x03", false},
 	} {

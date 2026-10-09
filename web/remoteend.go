@@ -48,7 +48,7 @@ func (s *Session) wireRemoteEnds() {
 
 // remoteEnded ends what a remote program asked for, as its end is seen.
 func (s *Session) remoteEnded() {
-	if s.Shell.Source() == "remote" {
+	if s.remote() {
 		s.programEnded()
 	}
 }

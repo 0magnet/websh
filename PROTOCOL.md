@@ -71,13 +71,14 @@ Replies come back as input:
 
 ## Trust
 
-The host gives every byte of output one of four sources:
+The host gives every byte of output one of five sources:
 
 | Source | What it is |
 |---|---|
 | **page** | the program the page itself is (compiled into the page's wasm) |
 | **local** | a program the shell launched from its filesystem (a process in the tab) |
 | **remote** | output arriving over ssh, mosh, or any network session |
+| **terminal** | a desktop host's pty (a native shell bridged into the page): the host cannot see whether its bytes are this machine's or an ssh session's inside it, so it gets the remote rules, and is told it is remote; it may set the window's title, as every desktop terminal lets output do |
 | **pipe** | output that is not going to the terminal at all (`prog \| less`): no requests apply |
 
 | Request | page | local | remote |
