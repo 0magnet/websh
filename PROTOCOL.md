@@ -102,6 +102,21 @@ program does not ask for what it will not get.
 remote, everything else is page. Remote output may not mount a widget a
 program in the tab offered. The other rows apply as their features are built.
 
+**A remote program's end.** The host cannot see a program on another machine
+exit: it sees one ssh or mosh session, and the session is the command. So for
+remote output it ends what the program asked for (placements, shipped
+widgets, the mirror, sounds, file drops, keyboard flags) at the marks a
+program's end leaves in the stream: leaving the alternate screen, a full reset
+(RIS, `ESC c`), the remote shell's prompt mark (OSC 133 `A`), the person's
+Ctrl+C or Ctrl+\\ on its way there, and the session's end. The text of an
+event that does reach a shell is base64 in an escape sequence, with no line
+end: it cannot run anything by itself. A remote program that stays on the
+normal screen must send `clear` before it exits; one that does not, and dies
+where no mark follows, leaves its placements until the next mark or the
+session's end.
+Built; found over a real ssh session, where a widget a dead program left went
+on sending its clicks, and they reached the remote shell as typed text.
+
 ## Discovery
 
 **Built.**

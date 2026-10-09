@@ -226,6 +226,7 @@ func NewSession(el js.Value, opt Options) (*Session, error) {
 	// the page, the window never changes when the terminal's box does.
 	s.Term.AutoFit()
 	s.wireViewer(el)
+	s.wireRemoteEnds()
 	s.wireDrop(el)
 	if !opt.NoKeyBar && touchScreen() {
 		s.wireKeyBar(box)
@@ -363,6 +364,7 @@ func (s *Session) onData(data string) {
 		if s.rawInput {
 			// A full-screen applet owns the terminal: raw bytes, no echo,
 			// and Ctrl+C is passed through for it to handle itself.
+			s.interruptTyped(data)
 			s.writeStdin([]byte(data))
 			return
 		}
@@ -474,19 +476,8 @@ func (s *Session) run() {
 				s.Term.WriteString(s.host + ": " + strings.ReplaceAll(msg, "\n", "\r\n") + "\r\n")
 			}
 		}
-		// What the command laid over the cells goes with it.
-		if s.placements != nil {
-			s.placements.clear()
-			s.placements.forgetShipped()
-		}
-		s.fontRestore()
-		s.pageRestore()
-		s.mirrorClear()
-		s.soundsEnd()
-		s.dropListen = false
-		// A program that pushed kitty keyboard flags and did not pop them —
-		// crashed, say — does not leave the keys encoded for it.
-		s.Term.Core.InputHandler().ResetKittyKeyboard()
+		// What the command asked the host for goes with it.
+		s.programEnded()
 		s.page.linkLine = "" // a link opens its program once
 		if s.afterCommand != nil {
 			s.afterCommand()
