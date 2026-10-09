@@ -50,6 +50,7 @@ build_demo() {
 	tinygo build -o docs/bin/ttydemo.wasm -target wasm -no-debug ./cmd/ttydemo
 	tinygo build -o docs/bin/wasmwidget.wasm -target wasm -no-debug ./cmd/wasmwidget
 	tinygo build -o docs/bin/progcheck.wasm -target wasm -no-debug ./cmd/progcheck
+	tinygo build -o docs/bin/progdemo.wasm -target wasm -no-debug ./cmd/progdemo
 }
 
 case "${1:-both}" in

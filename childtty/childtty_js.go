@@ -1,28 +1,12 @@
 //go:build js && wasm
 
-// Package childtty is a program's terminal when websh runs it from the
-// filesystem: a child process under bottle's proc, with a terminal of its
-// own, as a tcell Tty. Size, raw mode and resizes come from the shell, keys
-// are read and the screen drawn through the terminal itself, so it works
-// whichever toolchain built the program.
-//
-//	s, err := childtty.NewScreen()
-//
-// is all a tcell program needs; where the program is not a child with a
-// terminal, it falls back to tcell's own screen. A program that writes
-// sequences of its own beside tcell's (websh placements, say) writes them to
-// the Tty Open returns, so they land in order: TinyGo holds os.Stdout back
-// until a newline. A program TinyGo built must also end with os.Exit, since
-// TinyGo keeps a js program alive after main returns.
 package childtty
 
 import (
 	"io"
 	"sync"
-	"time"
 
 	"github.com/0magnet/bottle/proc"
-	"github.com/gdamore/tcell/v3"
 	"github.com/gdamore/tcell/v3/tty"
 
 	"github.com/0magnet/websh/progressive"
@@ -42,34 +26,6 @@ func Open() (tty.Tty, bool) {
 	c.in, events = progressive.Filter(in)
 	t.OnResize(c.resized)
 	return c, true
-}
-
-// events carries the host's events once Open has run.
-var events <-chan *progressive.Event
-
-// Events is what happens to this program's placements made with Events —
-// clicks, and messages from their widgets — as the host reports it. Each is a
-// tcell.Event too, so a tcell program can pass them into its own queue:
-//
-//	go func() {
-//		for e := range childtty.Events() {
-//			screen.EventQ() <- e
-//		}
-//	}()
-//
-// It is nil before Open, and where there is no terminal.
-func Events() <-chan *progressive.Event { return events }
-
-// probeWait is how long a terminal that answers nothing is waited for.
-const probeWait = 2 * time.Second
-
-// NewScreen is a tcell screen on this program's terminal, or tcell's own
-// screen where it has none.
-func NewScreen() (tcell.Screen, error) {
-	if t, ok := Open(); ok {
-		return tcell.NewTerminfoScreenFromTty(t)
-	}
-	return tcell.NewScreen()
 }
 
 type childTty struct {
