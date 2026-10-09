@@ -98,6 +98,13 @@ The host gives every byte of output one of five sources:
 The reply to Discovery says which source the host saw (`"trust"`), so a
 program does not ask for what it will not get.
 
+The sources limit what output may *request*; they are not a sandbox. A page
+or local program runs in the page itself, with the page's origin, and can
+draw anything a web page can through the browser's APIs (in Go, `syscall/js`),
+with no request at all: an existing site's HTML, CSS and scripts, as they are.
+Only remote and terminal output, which reaches the page as bytes, is limited
+to what it asks for here, and to the sandboxed widgets it ships.
+
 **Built:** the shell marks the output source as a command runs (Go:
 `Shell.WithSource`): a program from the filesystem is local, ssh and mosh are
 remote, everything else is page. Remote output may not mount a widget a

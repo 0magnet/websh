@@ -137,6 +137,13 @@ its stdout on the terminal it has a terminal of its own — the size, resizes,
 raw mode — so a full-screen program works: `childtty.NewScreen()` is a tcell
 screen on it. Widgets it offers are withdrawn when it exits.
 
+A program run from the filesystem is not sandboxed. It runs in the page
+itself, with the page's origin, so through `syscall/js` it can draw anything a
+web page can: its own widgets in the page's DOM (`widget.Register`), or a whole
+existing site, its HTML, CSS and scripts as they are. Only output from another
+machine (ssh, mosh, a desktop host's pty) is limited to the sandboxed widgets
+it ships ([PROTOCOL.md](PROTOCOL.md), Trust).
+
 Such a program is a **progressive terminal** program: a terminal program first,
 which asks its host for more over its own output and becomes more where the
 host can do it. [PROTOCOL.md](PROTOCOL.md) is the protocol: the program asks
