@@ -4,12 +4,12 @@ go 1.26.6
 
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
-	github.com/0magnet/bottle v0.0.1-0.20261008142407-9dad3ecd3fe0
+	github.com/0magnet/bottle v0.0.1-0.20261008160757-8052b02bade6
 	github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
-	github.com/0magnet/winbox-go v0.0.1-0.20261004205602-89c284da50a4
-	github.com/0magnet/wisp v0.0.0-20261004205345-c7d0d339b3d7
-	github.com/0magnet/xterm-go v0.0.1-0.20261008134010-b06379d0eb39
+	github.com/0magnet/winbox-go v0.0.1-0.20261008155453-e5e3ca2e9451
+	github.com/0magnet/wisp v0.0.0-20261009120029-edd66081caa0
+	github.com/0magnet/xterm-go v0.0.1-0.20261008155303-2eb476815469
 	github.com/benhoyt/goawk v1.32.0
 	github.com/gdamore/tcell/v3 v3.5.0
 	github.com/itchyny/gojq v0.12.19
@@ -21,8 +21,8 @@ require (
 
 require (
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
-	github.com/charmbracelet/ultraviolet v0.0.0-20261001125412-878653296cfd // indirect
-	github.com/charmbracelet/x/ansi v0.11.8 // indirect
+	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
+	github.com/charmbracelet/x/ansi v0.11.9 // indirect
 	github.com/charmbracelet/x/exp/ordered v0.1.0 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
@@ -39,8 +39,8 @@ require (
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/xo/terminfo v1.2.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 )

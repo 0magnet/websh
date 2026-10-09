@@ -3,7 +3,7 @@
 github.com/0magnet/afero
 github.com/0magnet/afero/internal/common
 github.com/0magnet/afero/mem
-# github.com/0magnet/bottle v0.0.1-0.20261008142407-9dad3ecd3fe0
+# github.com/0magnet/bottle v0.0.1-0.20261008160757-8052b02bade6
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
 # github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
@@ -18,13 +18,13 @@ github.com/0magnet/sh/v3/syntax
 # github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 ## explicit; go 1.26.6
 github.com/0magnet/u-root/pkg/ls
-# github.com/0magnet/winbox-go v0.0.1-0.20261004205602-89c284da50a4
+# github.com/0magnet/winbox-go v0.0.1-0.20261008155453-e5e3ca2e9451
 ## explicit; go 1.24
 github.com/0magnet/winbox-go
-# github.com/0magnet/wisp v0.0.0-20261004205345-c7d0d339b3d7
+# github.com/0magnet/wisp v0.0.0-20261009120029-edd66081caa0
 ## explicit; go 1.26.4
 github.com/0magnet/wisp
-# github.com/0magnet/xterm-go v0.0.1-0.20261008134010-b06379d0eb39
+# github.com/0magnet/xterm-go v0.0.1-0.20261008155303-2eb476815469
 ## explicit; go 1.24
 github.com/0magnet/xterm-go
 github.com/0magnet/xterm-go/vt
@@ -39,11 +39,11 @@ github.com/benhoyt/goawk/parser
 # github.com/charmbracelet/colorprofile v0.4.3
 ## explicit; go 1.25.0
 github.com/charmbracelet/colorprofile
-# github.com/charmbracelet/ultraviolet v0.0.0-20261001125412-878653296cfd
+# github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4
 ## explicit; go 1.26.0
 github.com/charmbracelet/ultraviolet
 github.com/charmbracelet/ultraviolet/screen
-# github.com/charmbracelet/x/ansi v0.11.8
+# github.com/charmbracelet/x/ansi v0.11.9
 ## explicit; go 1.24.2
 github.com/charmbracelet/x/ansi
 github.com/charmbracelet/x/ansi/kitty
@@ -128,11 +128,11 @@ golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/net v0.59.0
+# golang.org/x/net v0.60.0
 ## explicit; go 1.26.0
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-# golang.org/x/sync v0.23.0
+# golang.org/x/sync v0.24.0
 ## explicit; go 1.26.0
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.48.0
