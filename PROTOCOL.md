@@ -1,3 +1,4 @@
+| `page` | with `input`: the mouse over it goes on to the page around the terminal too, as though the terminal were not there (a page's own element moved into the cells, whose handlers listen on the document) |
 # The progressive terminal
 
 A **progressive terminal** program is a terminal program first: it draws in
