@@ -6,7 +6,7 @@ github.com/0magnet/afero/mem
 # github.com/0magnet/bottle v0.0.1-0.20261008160757-8052b02bade6
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
-# github.com/0magnet/seat v0.0.0-20261010020625-53f992704517
+# github.com/0magnet/seat v0.0.0-20261010023929-451dce08bf6a
 ## explicit; go 1.26
 github.com/0magnet/seat
 # github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
@@ -24,7 +24,7 @@ github.com/0magnet/u-root/pkg/ls
 # github.com/0magnet/winbox-go v0.0.1-0.20261008155453-e5e3ca2e9451
 ## explicit; go 1.24
 github.com/0magnet/winbox-go
-# github.com/0magnet/wisp v0.0.0-20261009120029-edd66081caa0
+# github.com/0magnet/wisp v0.0.0-20261010111717-5602c41d7a1c
 ## explicit; go 1.26.4
 github.com/0magnet/wisp
 # github.com/0magnet/xterm-go v0.0.1-0.20261008155303-2eb476815469
@@ -119,7 +119,7 @@ github.com/unixshells/vt-go
 # github.com/xo/terminfo v1.2.0
 ## explicit; go 1.25
 github.com/xo/terminfo
-# golang.org/x/crypto v0.57.0
+# golang.org/x/crypto v0.58.0
 ## explicit; go 1.26.0
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
@@ -131,23 +131,23 @@ golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/net v0.60.0
+# golang.org/x/net v0.61.0
 ## explicit; go 1.26.0
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
 # golang.org/x/sync v0.24.0
 ## explicit; go 1.26.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.48.0
+# golang.org/x/sys v0.49.0
 ## explicit; go 1.26.0
 golang.org/x/sys/cpu
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/term v0.46.0
+# golang.org/x/term v0.47.0
 ## explicit; go 1.26.0
 golang.org/x/term
-# golang.org/x/text v0.42.0
+# golang.org/x/text v0.43.0
 ## explicit; go 1.26.0
 golang.org/x/text/encoding
 golang.org/x/text/encoding/internal/identifier
