@@ -611,6 +611,7 @@
 		const p = normalize(path);
 		if (p === null) return null;
 		for (const m of mounts) {
+			if (m.prefix === '/') return { m, rel: p };
 			if (p === m.prefix) return { m, rel: '/' };
 			if (p.startsWith(m.prefix + '/')) return { m, rel: p.slice(m.prefix.length) };
 		}
@@ -749,15 +750,45 @@
 		};
 	}
 
+	// readFileAsync reads a whole file through the fs calls, so a path under a
+	// mount works too. It resolves null for anything that is not a file.
+	function readFileAsync(path) {
+		const call = (name, ...a) => new Promise((res, rej) => fsImpl[name](...a, (err, v) => err ? rej(err) : res(v)));
+		return (async () => {
+			let st;
+			try { st = await call('stat', path); } catch (e) { return null; }
+			if (!st.isFile()) return null;
+			const fd = await call('open', path, 0, 0);
+			try {
+				const parts = [];
+				let n = 0;
+				for (;;) {
+					const buf = new Uint8Array(1 << 16);
+					const got = await call('read', fd, buf, 0, buf.length, n);
+					if (!got) break;
+					parts.push(buf.subarray(0, got));
+					n += got;
+				}
+				const out = new Uint8Array(n);
+				let at = 0;
+				for (const p of parts) { out.set(p, at); at += p.length; }
+				return out;
+			} finally {
+				await call('close', fd).catch(() => {});
+			}
+		})();
+	}
+
 	// mount attaches provider at prefix, which becomes a directory in the tree
-	// so its parent lists it. unmount detaches it; fds still open there answer
+	// so its parent lists it; a mount at / takes the whole tree, and readFile
+	// answers null there. unmount detaches it; fds still open there answer
 	// EIO from then on.
 	function mount(prefix, provider) {
 		const p = normalize(prefix);
-		if (p === null || p === '/') throw mkerr('EINVAL', 'mount at ' + prefix);
+		if (p === null) throw mkerr('EINVAL', 'mount at ' + prefix);
 		if (!provider || typeof provider !== 'object') throw mkerr('EINVAL', 'no provider');
 		if (mounts.some((m) => m.prefix === p)) throw mkerr('EBUSY', p);
-		mkdirp(p, 0o755);
+		if (p !== '/') mkdirp(p, 0o755);
 		mounts.push({ prefix: p, provider });
 		mounts.sort((a, b) => b.prefix.length - a.prefix.length);
 	}
@@ -801,6 +832,9 @@
 		umask() { return 0o22; },
 		cwd() { return cwd; },
 		chdir(dir) {
+			// A mount answers later, so a directory inside one is taken on trust;
+			// the first call made there reports it if it is not one.
+			if (mountOf(dir)) { cwd = normalize(dir); return; }
 			const r = resolve(dir, true);
 			if (!r.node) throw mkerr('ENOENT', dir);
 			if (r.node.entries === null) throw mkerr('ENOTDIR', dir);
@@ -1070,7 +1104,7 @@
 		mkdirp,          // host-side seeding helpers
 		writeFile: writeFileSeed,
 		writeLazy,       // seed a file fetched from a url on first read
-		readFile(path) { const r = resolve(path, true); if (!r.node || r.node.data === null) return null; return r.node.data; },
+		readFile(path) { if (mountOf(path)) return null; const r = resolve(path, true); if (!r.node || r.node.data === null) return null; return r.node.data; },
 		setCwd(d) { processImpl.chdir(d); },
 		pipe() { return makePipe(); },        // [readFd, writeFd]
 		isPipe(fd) { return isPipe(fd); },
@@ -1080,5 +1114,7 @@
 		mount,           // mount(prefix, provider): hand a subtree to a provider
 		unmount,         // unmount(prefix)
 		mounts() { return mounts.map((m) => m.prefix); },
+		mounted(path) { return !!mountOf(path); },
+		readFileAsync, // the whole file through the fs calls, mounts included
 	};
 })();
