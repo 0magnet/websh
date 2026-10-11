@@ -437,7 +437,7 @@ one a program will not ask for.
 **Trust is the host's.** Decide which features a program's output gets by
 where it comes from, and list only those; ignore requests for the rest.
 
-**Checking.** `progcheck` (cmd/progcheck) runs in any terminal and reports what
+**Checking.** `progcheck` (`websh progcheck`, or cmd/progcheck in websh) runs in any terminal and reports what
 it answers — Discovery and the features it lists, kitty keyboard and
 graphics, sixel, pointer shapes, sizes, colors and modes. The Go package
 `progressive` is a reference for the program side: Probe, the sequences, and

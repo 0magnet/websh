@@ -6,6 +6,13 @@ github.com/0magnet/afero/mem
 # github.com/0magnet/bottle v0.0.1-0.20261010202827-a5ff39f4742b
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
+# github.com/0magnet/calvin v0.0.1-0.20261011230737-763f06d9d646
+## explicit; go 1.26.0
+github.com/0magnet/calvin
+github.com/0magnet/calvin/clihelp
+# github.com/0magnet/coloredcobra v1.0.4-0.20261011230509-d5385cf44398
+## explicit; go 1.26.0
+github.com/0magnet/coloredcobra
 # github.com/0magnet/seat v0.0.0-20261010023929-451dce08bf6a
 ## explicit; go 1.26
 github.com/0magnet/seat
@@ -82,6 +89,9 @@ github.com/creack/pty
 # github.com/dustin/go-humanize v1.1.0
 ## explicit; go 1.21
 github.com/dustin/go-humanize
+# github.com/fatih/color v1.19.0
+## explicit; go 1.25.0
+github.com/fatih/color
 # github.com/gdamore/encoding v1.0.1
 ## explicit; go 1.9
 github.com/gdamore/encoding
@@ -92,6 +102,9 @@ github.com/gdamore/tcell/v3/color
 github.com/gdamore/tcell/v3/internal/widthutil
 github.com/gdamore/tcell/v3/tty
 github.com/gdamore/tcell/v3/vt
+# github.com/inconshreveable/mousetrap v1.1.0
+## explicit; go 1.18
+github.com/inconshreveable/mousetrap
 # github.com/itchyny/gojq v0.12.19
 ## explicit; go 1.24.0
 github.com/itchyny/gojq
@@ -101,6 +114,12 @@ github.com/itchyny/timefmt-go
 # github.com/lucasb-eyer/go-colorful v1.4.1
 ## explicit; go 1.12
 github.com/lucasb-eyer/go-colorful
+# github.com/mattn/go-colorable v0.1.16
+## explicit; go 1.18
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.24
+## explicit; go 1.20
+github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.31
 ## explicit; go 1.23
 github.com/mattn/go-runewidth
@@ -110,6 +129,12 @@ github.com/muesli/cancelreader
 # github.com/rivo/uniseg v0.4.7
 ## explicit; go 1.18
 github.com/rivo/uniseg
+# github.com/spf13/cobra v1.10.2
+## explicit; go 1.15
+github.com/spf13/cobra
+# github.com/spf13/pflag v1.0.10
+## explicit; go 1.12
+github.com/spf13/pflag
 # github.com/unixshells/mosh-go v0.5.2
 ## explicit; go 1.26.0
 github.com/unixshells/mosh-go

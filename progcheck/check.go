@@ -8,7 +8,7 @@
 //
 // Run it in websh (it is on the PATH as a program from the filesystem), or
 // in any terminal on a desktop.
-package main
+package progcheck
 
 import (
 	"bytes"

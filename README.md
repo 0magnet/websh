@@ -161,14 +161,14 @@ ttydemo
 answered, and a widget of its own over a box of its cells whose button the
 program counts and answers.
 
-`cmd/progdemo` shows the whole protocol, each part beside what the same
+`progdemo` shows the whole protocol, each part beside what the same
 program does where the host cannot: what the host answered, a picture in
 cells and as an image (kitty's graphics, which websh and kitty both draw), a
 shipped slider that drives the program's cells while the arrow keys drive the
 slider, the page's title and address (each demo page has a link of its own),
 media, and the mirror a screen reader is given. It is one program for every
-terminal: run it from websh's filesystem, or build it natively and run it in
-kitty, in a plain terminal, or over ssh into websh, where the remote rules
+terminal: run it from websh's filesystem (`cmd/progdemo`, the js/wasm build), or run
+`websh progdemo` natively in kitty, in a plain terminal, or over ssh into websh, where the remote rules
 show. `childtty` gives it the same probe and events natively, on `/dev/tty`.
 
 ```sh
@@ -188,7 +188,9 @@ widget/          offer a widget from a program run from the filesystem
 widget/inside/   for Go running as a shipped widget: talk to the program
 childtty/        a program's terminal as a tcell Tty, under bottle's proc
 cmd/ttydemo/     demo program; cmd/wasmwidget is the widget it ships
-cmd/progcheck/   reports what any terminal answers, progressive or not
+main.go, commands/  the native `websh` command: progdemo, progcheck
+progcheck/       reports what any terminal answers, progressive or not (cmd/progcheck: js/wasm main)
+progdemo/        the protocol demo (cmd/progdemo: js/wasm main)
 shell/           pure Go, natively testable (go test ./shell/):
   shell.go         interp.Runner + afero handlers (open/stat/readdir/access/exec)
   applets.go       the userland, written against afero
