@@ -3,7 +3,7 @@
 github.com/0magnet/afero
 github.com/0magnet/afero/internal/common
 github.com/0magnet/afero/mem
-# github.com/0magnet/bottle v0.0.1-0.20261008160757-8052b02bade6
+# github.com/0magnet/bottle v0.0.1-0.20261010202827-a5ff39f4742b
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
 # github.com/0magnet/seat v0.0.0-20261010023929-451dce08bf6a
@@ -27,7 +27,7 @@ github.com/0magnet/winbox-go
 # github.com/0magnet/wisp v0.0.0-20261010111717-5602c41d7a1c
 ## explicit; go 1.26.4
 github.com/0magnet/wisp
-# github.com/0magnet/xterm-go v0.0.1-0.20261010151358-9a8ac37a85ad
+# github.com/0magnet/xterm-go v0.0.1-0.20261011000522-9adb4a350db6
 ## explicit; go 1.24
 github.com/0magnet/xterm-go
 github.com/0magnet/xterm-go/vt
@@ -85,8 +85,8 @@ github.com/dustin/go-humanize
 # github.com/gdamore/encoding v1.0.1
 ## explicit; go 1.9
 github.com/gdamore/encoding
-# github.com/gdamore/tcell/v3 v3.5.0
-## explicit; go 1.25.0
+# github.com/gdamore/tcell/v3 v3.6.0
+## explicit; go 1.26.0
 github.com/gdamore/tcell/v3
 github.com/gdamore/tcell/v3/color
 github.com/gdamore/tcell/v3/internal/widthutil
