@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/0magnet/sh/v3/interp"
 )
@@ -111,5 +112,37 @@ func TestCompleteOffersPrograms(t *testing.T) {
 	}
 	if got := s.Complete("s", true); !slices.Contains(got, "sh") {
 		t.Fatalf("Complete(s) = %v, no sh", got)
+	}
+}
+
+// Ctrl+C cancels the line's context, which kills the program it is running.
+// The shell keeps its directory and variables through that; only a real exit
+// starts it afresh.
+func TestInterruptKeepsTheShell(t *testing.T) {
+	need(t, "sleep")
+	dir := t.TempDir()
+	var out bytes.Buffer
+	s, err := NewOS(nil, &out, &out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Run(context.Background(), "cd "+dir+" && kept=yes"); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() { time.Sleep(100 * time.Millisecond); cancel() }()
+	s.Run(ctx, "sleep 5") //nolint:errcheck,gosec // interrupted on purpose
+	if s.Exited() {
+		t.Error("an interrupted line reported an exit")
+	}
+	if s.Dir() != dir {
+		t.Errorf("directory after Ctrl+C: %s, want %s", s.Dir(), dir)
+	}
+	out.Reset()
+	if _, err := s.Run(context.Background(), "echo kept=$kept"); err != nil {
+		t.Fatal(err)
+	}
+	if got := out.String(); got != "kept=yes\n" {
+		t.Errorf("after Ctrl+C: %q", got)
 	}
 }
