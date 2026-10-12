@@ -13,12 +13,14 @@ require (
 	github.com/0magnet/wisp v0.0.0-20261011231828-e7db84f7a0b2
 	github.com/0magnet/xterm-go v0.0.1-0.20261011000522-9adb4a350db6
 	github.com/benhoyt/goawk v1.32.0
+	github.com/creack/pty v1.1.24
 	github.com/gdamore/tcell/v3 v3.6.0
 	github.com/itchyny/gojq v0.12.19
 	github.com/spf13/cobra v1.10.2
 	github.com/unixshells/mosh-go v0.5.2
 	github.com/unixshells/vt-go v0.2.0
 	golang.org/x/crypto v0.58.0
+	golang.org/x/sys v0.49.0
 	golang.org/x/term v0.47.0
 )
 
@@ -34,7 +36,6 @@ require (
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/coder/websocket v1.8.15 // indirect
-	github.com/creack/pty v1.1.24 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
@@ -50,6 +51,5 @@ require (
 	github.com/xo/terminfo v1.2.0 // indirect
 	golang.org/x/net v0.61.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
-	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )

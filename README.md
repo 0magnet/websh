@@ -176,6 +176,21 @@ curl -o /bin/progdemo https://websh.magnetosphere.net/bin/progdemo.wasm
 progdemo
 ```
 
+## On this machine
+
+The same shell runs natively, on the terminal it was started from:
+
+```bash
+go install github.com/0magnet/websh@latest
+websh                  # interactive, on this terminal
+websh -c 'ls | wc -l'  # one command line
+websh script.sh a b    # a script, with $1 $2
+```
+
+It is websh's interpreter, applets and line editor on this machine's files and programs. A program from the PATH is handed the terminal itself, so an editor, a pager or ssh works as under any shell, and Ctrl+C interrupts the line. Where a program and an applet share a name, the machine's program runs and the applet is the fallback for a machine without one; websh's own (`edit`, `imgcat`, `help`, `which`, and any an embedder registers) run first. `which` says which one will. There is no job control yet: Ctrl+Z does nothing.
+
+Run it in [progterm](https://github.com/0magnet/progterm) (`progterm --shell websh`) and it is in a progressive terminal, as in a page.
+
 ## Architecture
 
 ```
@@ -188,7 +203,9 @@ widget/          offer a widget from a program run from the filesystem
 widget/inside/   for Go running as a shipped widget: talk to the program
 childtty/        a program's terminal as a tcell Tty, under bottle's proc
 cmd/ttydemo/     demo program; cmd/wasmwidget is the widget it ships
-main.go, commands/  the native `websh` command: progdemo, progcheck
+main.go, commands/  the native `websh` command: the shell on this terminal,
+                   progdemo, progcheck
+console/         websh on a terminal: raw prompt, cooked commands, Ctrl+C
 progcheck/       reports what any terminal answers, progressive or not (cmd/progcheck: js/wasm main)
 progdemo/        the protocol demo (cmd/progdemo: js/wasm main)
 shell/           pure Go, natively testable (go test ./shell/):
