@@ -207,3 +207,72 @@ func TestAFullScreenApplet(t *testing.T) {
 	s.send("echo back-$((4+4))\r")
 	s.expect("back-8")
 }
+
+// A console in this process, on a pty that is not the process's terminal,
+// is interrupted through Options.Signals, as a window's tab is.
+func TestSignalsInProcess(t *testing.T) {
+	ptm, pts, err := pty.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ptm.Close() //nolint:errcheck
+	sigs := make(chan os.Signal, 1)
+	done := make(chan int, 1)
+	go func() {
+		code, _ := Run(Options{Host: "test", In: pts, Out: pts, Signals: sigs}) //nolint:errcheck
+		pts.Close()                                                             //nolint:errcheck,gosec
+		done <- code
+	}()
+	var mu sync.Mutex
+	var out bytes.Buffer
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := ptm.Read(buf)
+			mu.Lock()
+			out.Write(buf[:n])
+			mu.Unlock()
+			if err != nil {
+				return
+			}
+		}
+	}()
+	wait := func(want string) {
+		t.Helper()
+		for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+			mu.Lock()
+			ok := strings.Contains(out.String(), want)
+			mu.Unlock()
+			if ok {
+				return
+			}
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		t.Fatalf("no %q in output:\n%q", want, out.String())
+	}
+	wait("$ ")
+	io.WriteString(ptm, "sleep 30; echo after-$((1+1))\r") //nolint:errcheck,gosec
+	time.Sleep(300 * time.Millisecond)
+	start := time.Now()
+	sigs <- os.Interrupt
+	io.WriteString(ptm, "echo next-$((2+2))\r") //nolint:errcheck,gosec
+	wait("next-4")
+	if d := time.Since(start); d > 3*time.Second {
+		t.Fatalf("the interrupt took %v", d)
+	}
+	mu.Lock()
+	if strings.Contains(out.String(), "after-2") {
+		t.Error("the interrupted line went on to its next command")
+	}
+	mu.Unlock()
+	io.WriteString(ptm, "exit 3\r") //nolint:errcheck,gosec
+	select {
+	case code := <-done:
+		if code != 3 {
+			t.Fatalf("exit status %d", code)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the console did not exit")
+	}
+}
