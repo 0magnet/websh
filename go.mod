@@ -11,7 +11,7 @@ require (
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/winbox-go v0.0.1-0.20261013200318-576b1ad60c9a
 	github.com/0magnet/wisp v0.0.0-20261012011309-160ee017648c
-	github.com/0magnet/xterm-go v0.0.1-0.20261011000522-9adb4a350db6
+	github.com/0magnet/xterm-go v0.0.1-0.20261013204947-f189c545bca6
 	github.com/benhoyt/goawk v1.32.0
 	github.com/creack/pty v1.1.24
 	github.com/gdamore/tcell/v3 v3.6.0
