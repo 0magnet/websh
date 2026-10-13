@@ -5,11 +5,11 @@ go 1.26.6
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
 	github.com/0magnet/bottle v0.0.1-0.20261012170135-a605c941016f
-	github.com/0magnet/calvin v0.0.1-0.20261012011430-3b61384c1b9e
+	github.com/0magnet/calvin v0.0.1-0.20261013200157-9f68c20a964b
 	github.com/0magnet/seat v0.0.0-20261012011244-01164e82b270
 	github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
-	github.com/0magnet/winbox-go v0.0.1-0.20261012131923-a829715e530f
+	github.com/0magnet/winbox-go v0.0.1-0.20261013200318-576b1ad60c9a
 	github.com/0magnet/wisp v0.0.0-20261012011309-160ee017648c
 	github.com/0magnet/xterm-go v0.0.1-0.20261011000522-9adb4a350db6
 	github.com/benhoyt/goawk v1.32.0
@@ -25,7 +25,7 @@ require (
 )
 
 require (
-	github.com/0magnet/coloredcobra v1.0.4-0.20261011230509-d5385cf44398 // indirect
+	github.com/0magnet/coloredcobra v1.0.4-0.20261012213101-faa6bd8f94c5 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20261008173134-6b8d4baf91b4 // indirect
 	github.com/charmbracelet/x/ansi v0.11.9 // indirect
