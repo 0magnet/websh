@@ -4,7 +4,7 @@ go 1.26.6
 
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
-	github.com/0magnet/bottle v0.0.1-0.20261012024120-0f51d9f0e03a
+	github.com/0magnet/bottle v0.0.1-0.20261012170135-a605c941016f
 	github.com/0magnet/calvin v0.0.1-0.20261012011430-3b61384c1b9e
 	github.com/0magnet/seat v0.0.0-20261012011244-01164e82b270
 	github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
