@@ -54,9 +54,8 @@ func main() {
 		sigs   map[string]fileSig
 	)
 	opt := web.Options{
-		FS:       vfs,
-		Host:     "user@websh",
-		Greeting: greeting(persisted),
+		FS:   vfs,
+		Host: "user@websh",
 	}
 	if persisted {
 		sigs = storage.syncFS(vfs, nil) // baseline snapshot, which also persists the seed
@@ -83,11 +82,7 @@ func main() {
 	// one filesystem, started the first time it is switched to (0magnet/seat).
 	s := seat.New(seat.Options{Root: container})
 	for i := 1; i <= consoles; i++ {
-		o := opt
-		if i > 1 {
-			o.Greeting = "\x1b[1;36mwebsh\x1b[0m · tty" + strconv.Itoa(i) + " · \x1b[2mctrl+alt+1…" + strconv.Itoa(consoles) + " switch consoles\x1b[0m\r\n\r\n"
-		}
-		s.Add("tty"+strconv.Itoa(i), &console{opt: o, link: i == 1})
+		s.Add("tty"+strconv.Itoa(i), &console{opt: opt, link: i == 1})
 	}
 	if err := s.Show("tty1"); err != nil {
 		js.Global().Get("console").Call("error", err.Error())
@@ -123,15 +118,4 @@ func (c *console) Close() {
 	if c.sess != nil {
 		c.sess.Close()
 	}
-}
-
-func greeting(persisted bool) string {
-	fsNote := "an in-memory filesystem (IndexedDB unavailable — changes are not persisted)"
-	if persisted {
-		fsNote = "a filesystem persisted in IndexedDB — your files survive reloads (\x1b[1mreset-fs\x1b[0m to wipe)"
-	}
-	return "\x1b[1;36mwebsh\x1b[0m — bash in your browser · \x1b[2mgithub.com/0magnet/websh\x1b[0m\r\n" +
-		"the shell is \x1b[1m0magnet/sh\x1b[0m (mvdan/sh fork) on " + fsNote + "\r\n" +
-		"try: \x1b[1mhelp\x1b[0m · \x1b[1mcat readme.md\x1b[0m · \x1b[1msource demo.sh\x1b[0m · \x1b[1mtree /\x1b[0m\r\n" +
-		"\x1b[2mctrl+alt+1…4: four consoles, one filesystem\x1b[0m\r\n\r\n"
 }
