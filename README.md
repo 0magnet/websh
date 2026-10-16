@@ -40,7 +40,8 @@ The interpreter, userland and filesystem run in an environment upstream doesn't 
 - **A pager**: `less`/`more` (space/b page, j/k line, g/G ends, q quits)
 - **The browser console, in the shell**: `js 'document.title'` evaluates JavaScript in the page (promises awaited, objects printed as JSON) and `logs` reads captured `console.*` output — `-f` to follow, `-e` for errors only, `-n N`, `-c` to clear. Pipe it: `logs -e -p | wc -l`
 - **Browser superpowers**: `curl` (fetch, CORS applies), `nc` (WebSocket netcat), `download` (vfs file → your Downloads), `upload` (file picker → vfs), `pbcopy`/`pbpaste` (system clipboard)
-- Line editing: **tab completion** (commands and paths), history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears
+- Line editing: **tab completion** (commands and paths), history (↑/↓), cursor movement (←/→, Ctrl+A/E), kill (Ctrl+U/K/W), Ctrl+C cancels running commands (`sleep 30` → `^C`), Ctrl+L clears. A line longer than the terminal wraps, and editing works across the wrap: the editor knows the width and the prompt's width, and a resized terminal is taken to have reflowed the line
+- **A startup file**: see [~/.webshrc](#webshrc)
 
 ```
 user@websh:~$ curl -s https://api.github.com/repos/0magnet/websh | jq -r .description
@@ -174,6 +175,18 @@ show. `childtty` gives it the same probe and events natively, on `/dev/tty`.
 ```sh
 curl -o /bin/progdemo https://websh.magnetosphere.net/bin/progdemo.wasm
 progdemo
+```
+
+## ~/.webshrc
+
+An interactive websh sources `~/.webshrc` before its first prompt, as bash does `~/.bashrc`. In a page that is `/home/user/.webshrc` on the IndexedDB filesystem, and on this machine (`websh`, `skywire sh`) it is the real home directory's. It runs in the session's own interpreter, so its aliases, functions, exports and `cd` stay. A failing command in it is reported and the shell starts anyway; Ctrl+C ends one that hangs.
+
+Setting `PS1` there (or later, at the prompt) replaces websh's prompt. Left alone, the prompt is the one websh always had, and a `PS1` exported by the shell that started websh is not used. It takes bash's escapes: `\u` user, `\h` and `\H` host, `\w` and `\W` directory, `\$` (`#` for root), `\n`, `\e` and octal `\033`, `\a`, `\\`, the times `\t \T \@ \A` and the date `\d`. Wrap what takes no room on the screen in `\[` and `\]`, as in bash; escape sequences are not counted either way. `$NAME` and `${NAME}` expand, command substitution does not run.
+
+```bash
+alias ll='ls -l'
+export EDITOR=edit
+PS1='\[\e[1;32m\]\u@\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
 ```
 
 ## On this machine

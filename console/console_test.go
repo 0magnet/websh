@@ -8,11 +8,13 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/0magnet/xterm-go/vt"
 	"github.com/creack/pty"
 )
 
@@ -43,9 +45,16 @@ type session struct {
 
 func start(t *testing.T) *session {
 	t.Helper()
+	return startIn(t, t.TempDir(), 80, "$ ")
+}
+
+// startIn starts a console with home as its HOME on a terminal cols wide, and
+// waits for its prompt to end in prompt.
+func startIn(t *testing.T, home string, cols uint16, prompt string) *session {
+	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run=^$") //nolint:gosec // this test binary, run as the console
-	cmd.Env = append(os.Environ(), "WEBSH_CONSOLE_CHILD=1", "TERM=xterm-256color")
-	tty, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 24, Cols: 80})
+	cmd.Env = append(os.Environ(), "WEBSH_CONSOLE_CHILD=1", "TERM=xterm-256color", "HOME="+home)
+	tty, err := pty.StartWithSize(cmd, &pty.Winsize{Rows: 24, Cols: cols})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +77,7 @@ func start(t *testing.T) *session {
 		cmd.Wait()         //nolint:errcheck,gosec // reaped; the status was the test's business
 		tty.Close()        //nolint:errcheck,gosec // the pty is done
 	})
-	s.expect("$ ")
+	s.expect(prompt)
 	return s
 }
 
@@ -275,4 +284,49 @@ func TestSignalsInProcess(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the console did not exit")
 	}
+}
+
+func TestRCSetsPromptAndAliases(t *testing.T) {
+	home := t.TempDir()
+	rc := "alias hi='echo hi-from-rc'\nPS1='\\[\\e[35m\\]rc:\\W\\[\\e[0m\\]> '\n"
+	if err := os.WriteFile(home+"/.webshrc", []byte(rc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := startIn(t, home, 80, "> ")
+	s.send("hi\r")
+	s.expect("hi-from-rc")
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.expect("\x1b[35mrc:" + filepath.Base(wd) + "\x1b[0m> ")
+}
+
+// The terminal's output, replayed into xterm-go, shows a line edited across
+// the right edge as it was meant to look.
+func TestEditsAcrossTheRightEdge(t *testing.T) {
+	home := t.TempDir()
+	if err := os.WriteFile(home+"/.webshrc", []byte("PS1='% '\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	s := startIn(t, home, 20, "% ")
+	s.send("echo " + strings.Repeat("x", 30))
+	s.send(strings.Repeat("\x7f", 12) + "\x01" + strings.Repeat("\x1b[C", 5) + "AB\x1b[F")
+	time.Sleep(300 * time.Millisecond)
+	opts := vt.NewOptions()
+	opts.Cols, opts.Rows = 20, 24
+	term := vt.NewTerminal(opts)
+	s.mu.Lock()
+	term.WriteString(s.out.String())
+	s.mu.Unlock()
+	b := term.Buffer()
+	row := func(y int) string {
+		return strings.TrimRight(b.Lines.Get(b.YBase+y).TranslateToString(true, 0, -1), " ")
+	}
+	got := row(b.Y-1) + "|" + row(b.Y) + "|" + row(b.Y+1)
+	if want := "% echo ABxxxxxxxxxxx|xxxxxxx|"; got != want || b.X != 7 {
+		t.Fatalf("rows %q cursor col %d, want %q col 7", got, b.X, want)
+	}
+	s.send("\r")
+	s.expect("AB" + strings.Repeat("x", 18) + "\r\n")
 }
