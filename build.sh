@@ -11,6 +11,7 @@
 #   ./build.sh tinygo   TinyGo only
 #   ./build.sh go       standard Go only
 #   ./build.sh demo     the program run from the filesystem, docs/bin/ttydemo.wasm
+#   ./build.sh term     the terminal package term embeds, term/term.wasm.gz
 #
 # This existed only in somebody's shell history before, which is why a fixed
 # dependency could sit unreleased in the demo indefinitely.
@@ -53,12 +54,23 @@ build_demo() {
 	tinygo build -o docs/bin/progdemo.wasm -target wasm -no-debug ./cmd/progdemo
 }
 
+# The terminal package term embeds: TinyGo for its size, gzipped once here so
+# the server sends it as it is. wasm_exec.js must come from the same TinyGo.
+build_term() {
+	tinygo build -o term/term.wasm -target wasm -no-debug -ldflags "-X github.com/0magnet/websh/web.Version=$(version)" ./cmd/websh-term
+	gzip -9 -n -f term/term.wasm
+	cp "$(tinygo env TINYGOROOT)/targets/wasm_exec.js" term/wasm_exec.js
+	chmod 644 term/wasm_exec.js term/term.wasm.gz
+	ls -lh term/term.wasm.gz
+}
+
 case "${1:-both}" in
 both)   bottle_js; build_tinygo; build_go; build_demo ;;
 tinygo) bottle_js; build_tinygo ;;
 go)     bottle_js; build_go ;;
 demo)   build_demo ;;
-*)      echo "usage: $0 [both|tinygo|go|demo]" >&2; exit 2 ;;
+term)   build_term ;;
+*)      echo "usage: $0 [both|tinygo|go|demo|term]" >&2; exit 2 ;;
 esac
 
 ls -lh docs/main.wasm docs/go/main.wasm 2>/dev/null || true

@@ -13,6 +13,7 @@ require (
 	github.com/0magnet/wisp v0.0.0-20261013221105-1e4a0e54c8bc
 	github.com/0magnet/xterm-go v0.0.1-0.20261013223808-aa0a32cd702b
 	github.com/benhoyt/goawk v1.32.0
+	github.com/coder/websocket v1.8.15
 	github.com/creack/pty v1.1.24
 	github.com/gdamore/tcell/v3 v3.6.0
 	github.com/itchyny/gojq v0.12.19
@@ -36,7 +37,6 @@ require (
 	github.com/charmbracelet/x/windows v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/coder/websocket v1.8.15 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect

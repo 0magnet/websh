@@ -61,6 +61,12 @@ user@websh:~$ ssh -p 2222 me@remote.example.net uptime
 
 Passwords and keyboard-interactive prompts are read without echo. Keys come from websh's filesystem: `-i FILE`, then `~/.ssh/id_ed25519`, `id_ecdsa` and `id_rsa` (`upload` brings one in); an encrypted key asks for its passphrase. Host keys are checked against `~/.ssh/known_hosts`: an unknown host is shown by fingerprint and asked about, as OpenSSH does, and a changed key is refused. Without a command you get a login shell on a pty that follows the terminal's size; `~.` at the start of a line disconnects. With a command, its stdout, stderr and exit status come back (`-n`: send it no stdin).
 
+## pty
+
+`pty <address>` is a terminal on another machine over one WebSocket, the protocol in [PTY.md](PTY.md): keys out and output back as binary messages, the terminal's size as a JSON control message, and an optional session id that lets a dropped connection reattach the same shell. The address is `ws://`, `wss://`, `http(s)://` or a path resolved against the page, and `~.` at the start of a line disconnects.
+
+`websh serve` is the other end: this machine's shell in a browser, websh's terminal page at `/` running `pty` against a pseudo-terminal per page. It listens on `127.0.0.1:7681` by default and refuses pages from other sites. Package `term` is that page as an `http.Handler`, with the TinyGo build embedded (`./build.sh term`), for a Go server to offer its own shells. Skywire's visors serve their terminals with it.
+
 ## mosh
 
 `mosh` connects to a [mosh](https://mosh.org/) server from the browser. A page cannot send UDP, so mosh's datagrams ride a [Wisp](https://github.com/MercuryWorkshop/wisp-protocol) UDP stream instead, and a Wisp server sends them on as real UDP. The protocol is [mosh-go](https://github.com/unixshells/mosh-go); the transport is [0magnet/wisp](https://github.com/0magnet/wisp).
