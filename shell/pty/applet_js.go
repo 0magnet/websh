@@ -201,10 +201,13 @@ func connect(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, add
 		ws.Call("send", u8)
 	}
 
+	// Keys typed before the socket opens, on a reconnect say, wait for it
+	// rather than being dropped.
 	var (
 		res        result
 		esc        escape
 		cols, rows int
+		pending    [][]byte
 	)
 	resize := func() {
 		if s.Size == nil {
@@ -230,7 +233,11 @@ func connect(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, add
 		case k := <-keys:
 			out, quit := esc.filter(k)
 			if len(out) > 0 {
-				send(out, false)
+				if res.opened {
+					send(out, false)
+				} else {
+					pending = append(pending, out)
+				}
 			}
 			if quit {
 				res.quit = true
@@ -242,6 +249,10 @@ func connect(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, add
 				case "open":
 					res.opened = true
 					resize()
+					for _, p := range pending {
+						send(p, false)
+					}
+					pending = nil
 				case "data":
 					shell.Write(hc.Stdout, e.data)
 				case "text":
