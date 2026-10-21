@@ -25,8 +25,10 @@ func Register() {
 // no event for it.
 const resizePoll = 250 * time.Millisecond
 
-// reconnects bounds the attempts to reattach a session after a drop.
-const reconnects = 5
+// closeNormal is the WebSocket close code a server sends when it ends the
+// session itself, as when the shell exits. A dropped connection closes with
+// another code, 1006 when it simply broke, and is reconnected.
+const closeNormal = 1000
 
 func run(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, args []string) int {
 	if len(args) != 1 || args[0] == "-h" || args[0] == "--help" {
@@ -77,7 +79,7 @@ func run(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, args []
 		case res.opened:
 			attempt = 0
 		}
-		if sid == "" || attempt >= reconnects {
+		if sid == "" || res.ended {
 			if res.err != nil {
 				shell.Printf(hc.Stderr, "\r\npty: %v\r\n", res.err)
 				return 1
@@ -85,9 +87,11 @@ func run(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, args []
 			shell.Print(hc.Stderr, "\r\n[pty: session ended]\r\n")
 			return 0
 		}
-		shell.Print(hc.Stderr, "\r\n[pty: reconnecting]\r\n")
+		if attempt == 0 {
+			shell.Print(hc.Stderr, "\r\n[pty: reconnecting]\r\n")
+		}
 		select {
-		case <-time.After(time.Second << attempt):
+		case <-time.After(retryWait(attempt)):
 		case <-ctx.Done():
 			return 130
 		}
@@ -121,6 +125,7 @@ func readKeys(in io.Reader, keys chan<- []byte, stop <-chan struct{}) {
 type result struct {
 	opened bool   // it got as far as open
 	quit   bool   // the person typed ~.
+	ended  bool   // the server closed normally: the session is over
 	sid    string // the session id the server gave, if any
 	err    error
 }
@@ -129,6 +134,7 @@ type result struct {
 type event struct {
 	kind string // open, data, text, close, error
 	data []byte
+	code int // a close event's code
 }
 
 // queue carries events out of the browser's callbacks. It is unbounded and
@@ -176,7 +182,10 @@ func connect(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, add
 		q.post(event{kind: "data", data: b})
 		return nil
 	})
-	onClose := js.FuncOf(func(js.Value, []js.Value) any { q.post(event{kind: "close"}); return nil })
+	onClose := js.FuncOf(func(_ js.Value, a []js.Value) any {
+		q.post(event{kind: "close", code: a[0].Get("code").Int()})
+		return nil
+	})
 	onError := js.FuncOf(func(js.Value, []js.Value) any { q.post(event{kind: "error"}); return nil })
 	defer onOpen.Release()
 	defer onMessage.Release()
@@ -268,6 +277,7 @@ func connect(ctx context.Context, s *shell.Shell, hc *interp.HandlerContext, add
 						res.err = errors.New("could not connect to " + addr)
 					}
 				case "close":
+					res.ended = e.code == closeNormal
 					return res
 				}
 			}

@@ -28,6 +28,12 @@ opens a new one to the same address with `?sid=<id>` added, and the server
 attaches that shell, replaying what it wrote meanwhile. A server without this
 never sends `session`, and a client then ends when the connection does.
 
+A server ends a session by closing with code 1000, as when the shell exits,
+and the client does not reconnect after that. Any other close is a dropped
+connection, such as either end restarting, and the client keeps trying, waiting
+up to 10 seconds between attempts. A server that no longer has the shell
+starts a new one.
+
 ## Origin
 
 A page on another site can open a WebSocket to any address it likes; CORS does
