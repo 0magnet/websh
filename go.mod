@@ -9,7 +9,7 @@ require (
 	github.com/0magnet/seat v0.0.0-20261013221028-e66b97ebca1a
 	github.com/0magnet/sh/v3 v3.13.2-0.20261004194540-aa2d6e4a31a5
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
-	github.com/0magnet/winbox-go v0.0.1-0.20261013224642-cc4224c41a9c
+	github.com/0magnet/winbox-go v0.0.1-0.20261020181245-bacce940cc20
 	github.com/0magnet/wisp v0.0.0-20261013221105-1e4a0e54c8bc
 	github.com/0magnet/xterm-go v0.0.1-0.20261013223808-aa0a32cd702b
 	github.com/benhoyt/goawk v1.32.0
