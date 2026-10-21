@@ -330,3 +330,55 @@ func TestEditsAcrossTheRightEdge(t *testing.T) {
 	s.send("\r")
 	s.expect("AB" + strings.Repeat("x", 18) + "\r\n")
 }
+
+// TestRunsAFirstLine: Options.Run runs before anything is typed, shown at the
+// first prompt, and the shell then reads the terminal as usual.
+func TestRunsAFirstLine(t *testing.T) {
+	ptm, pts, err := pty.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ptm.Close() //nolint:errcheck
+	done := make(chan int, 1)
+	go func() {
+		code, _ := Run(Options{Host: "test", In: pts, Out: pts, Signals: make(chan os.Signal), Run: "echo first-$((1+1))"}) //nolint:errcheck
+		pts.Close()                                                                                                         //nolint:errcheck,gosec
+		done <- code
+	}()
+	var mu sync.Mutex
+	var out bytes.Buffer
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			n, err := ptm.Read(buf)
+			mu.Lock()
+			out.Write(buf[:n])
+			mu.Unlock()
+			if err != nil {
+				return
+			}
+		}
+	}()
+	wait := func(want string) {
+		t.Helper()
+		for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+			mu.Lock()
+			ok := strings.Contains(out.String(), want)
+			mu.Unlock()
+			if ok {
+				return
+			}
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		t.Fatalf("no %q in %q", want, out.String())
+	}
+	wait("echo first-$((1+1))\r\n")      // shown as typed
+	wait("first-2\r\n")                  // and run
+	ptm.WriteString("echo then-typed\r") //nolint:errcheck,gosec
+	wait("then-typed\r\n")
+	ptm.WriteString("exit 3\r") //nolint:errcheck,gosec
+	if code := <-done; code != 3 {
+		t.Fatalf("exit status %d, want 3", code)
+	}
+}
