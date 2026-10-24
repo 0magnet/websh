@@ -46,25 +46,25 @@ func TestReportJobs(t *testing.T) {
 		t.Fatalf("status after the report = %q, want \"1\\n\"", got)
 	}
 
-	// A finished job is announced, and announced only once. Not waited for
-	// first: waiting reaps the job itself, so there would be nothing left to
-	// announce — which is also what bash does.
+	// A finished job is announced, and announced only once. As jobs -n does
+	// in bash, a report may first announce it as running, once.
 	run("sleep 0 &")
-	var first string
+	var reports string
 	for range 400 {
-		if first = report(); first != "" {
+		if reports += report(); strings.Contains(reports, "Done") {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	if !strings.Contains(first, "Done") {
-		t.Fatalf("first report = %q, want a Done line", first)
+	if strings.Count(reports, "Done") != 1 || strings.Count(reports, "Running") > 1 {
+		t.Fatalf("reports = %q, want one Done line, after at most one Running", reports)
 	}
 	if got := report(); got != "" {
 		t.Fatalf("second report = %q, want nothing", got)
 	}
 
-	// A job still running is not announced, and reaping does not touch it.
+	// A job still running is announced once, as bash announces a job it starts,
+	// and reaping does not touch it.
 	var out2 strings.Builder
 	sh2, err := New(nil, strings.NewReader(""), &out2, &out2)
 	if err != nil {
@@ -75,8 +75,13 @@ func TestReportJobs(t *testing.T) {
 	}
 	before := out2.Len()
 	sh2.ReportJobs(ctx)
+	if got := out2.String()[before:]; !strings.Contains(got, "Running") {
+		t.Fatalf("first report while a job runs = %q, want it running", got)
+	}
+	before = out2.Len()
+	sh2.ReportJobs(ctx)
 	if got := out2.String()[before:]; got != "" {
-		t.Fatalf("report while a job runs = %q", got)
+		t.Fatalf("second report while a job runs = %q", got)
 	}
 	_, _ = sh2.Run(ctx, "kill %1; wait") //nolint:errcheck,gosec // cleanup
 
