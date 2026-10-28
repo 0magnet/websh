@@ -14,10 +14,10 @@ github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754 h1:wK2MncQOnEea7
 github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754/go.mod h1:9N1kqBjNdAUT/pfrWKyty4zS5ZQgG1OvsTmhdcpAWB0=
 github.com/0magnet/winbox-go v0.0.1-0.20261020181245-bacce940cc20 h1:MKczsltMtQF+KFbPCodPoi8TSnbOykcgkTAOZqstgP0=
 github.com/0magnet/winbox-go v0.0.1-0.20261020181245-bacce940cc20/go.mod h1:haaCdC90/H8TsR8O04zqrzpOHFSqMgB6QgnyMIS/FxE=
-github.com/0magnet/wisp v0.0.0-20261013221105-1e4a0e54c8bc h1:pMqfX3ExD0vVVribhpBnhw1RVo4QS/CYA+7xHh8FGMc=
-github.com/0magnet/wisp v0.0.0-20261013221105-1e4a0e54c8bc/go.mod h1:6HCKHaJm/rethFOxITPYXmcRmA2BQO9RKUNCvrUkYKc=
-github.com/0magnet/xterm-go v0.0.1-0.20261013223808-aa0a32cd702b h1:JNS/l+YI/yqCo0sR6wWKvtaupaAStVbivqcWee6Wq9c=
-github.com/0magnet/xterm-go v0.0.1-0.20261013223808-aa0a32cd702b/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
+github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542 h1:0ZbD1TN5cu6xafopHfxGuqcK8Oxpw+CNAq6TiZomMBc=
+github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542/go.mod h1:Bl0e1pRx3AJB/OlMK0YtMLAGAqqVst3/0wqnVdCCIEs=
+github.com/0magnet/xterm-go v0.0.1-0.20261027203517-9d9bf96eff34 h1:/uJL/wm50yMSJEjII0UiHuNIGj5fisyi+Lycf/CRasA=
+github.com/0magnet/xterm-go v0.0.1-0.20261027203517-9d9bf96eff34/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.32.0 h1:CK/mnBxGsNqX8hdghPIctl2aGIcwfnhT6sv+9M/bY7w=
 github.com/benhoyt/goawk v1.32.0/go.mod h1:jXTQxBxtQ0VsjFqc8dw7tIJj3SDzQN8kcdMq7r83/ZA=
 github.com/charmbracelet/colorprofile v0.4.3 h1:QPa1IWkYI+AOB+fE+mg/5/4HRMZcaXex9t5KX76i20Q=
@@ -103,8 +103,8 @@ golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLL
 golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=
 golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=
 golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=
-golang.org/x/net v0.61.0 h1:RR+6j/BTBCrggOLugxa+66R8FvoN6MHlzDlZIbN9YFw=
-golang.org/x/net v0.61.0/go.mod h1:WgDCOTH8iwtB66T4/GfI94AHo/hhdb7Hah9NDseQfiI=
+golang.org/x/net v0.62.0 h1:18ELalfM5+XNRwzM2nYqXsZQ9ByS1uhj2O/U7+5jqRY=
+golang.org/x/net v0.62.0/go.mod h1:WgDCOTH8iwtB66T4/GfI94AHo/hhdb7Hah9NDseQfiI=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.1.0/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

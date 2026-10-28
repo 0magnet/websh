@@ -10,8 +10,8 @@ require (
 	github.com/0magnet/sh/v3 v3.13.2-0.20261024150911-145e01c63128
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/winbox-go v0.0.1-0.20261020181245-bacce940cc20
-	github.com/0magnet/wisp v0.0.0-20261013221105-1e4a0e54c8bc
-	github.com/0magnet/xterm-go v0.0.1-0.20261013223808-aa0a32cd702b
+	github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542
+	github.com/0magnet/xterm-go v0.0.1-0.20261027203517-9d9bf96eff34
 	github.com/benhoyt/goawk v1.32.0
 	github.com/coder/websocket v1.8.15
 	github.com/creack/pty v1.1.24
@@ -49,7 +49,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/xo/terminfo v1.2.0 // indirect
-	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
