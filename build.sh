@@ -41,7 +41,7 @@ bottle_js() {
 	GOFLAGS=-mod=mod go mod download github.com/0magnet/bottle
 	dir=$(GOFLAGS=-mod=mod go list -m -f '{{.Dir}}' github.com/0magnet/bottle)
 	[ -n "$dir" ] || { echo 'bottle: module not found' >&2; exit 1; }
-	for f in jsfs.js vnet.js proc.js; do cp "$dir/$f" "docs/$f"; chmod 644 "docs/$f"; done
+	for f in jsfs.js vnet.js proc.js update.js; do cp "$dir/$f" "docs/$f"; chmod 644 "docs/$f"; done
 }
 
 # A program that is not part of the page: fetched into the shell and run from
@@ -64,11 +64,16 @@ build_term() {
 	ls -lh term/term.wasm.gz
 }
 
+# The stamp bottle's update.js watches (docs/index.html): a hash of what was
+# built, so the open page hears of a new build when a binary changes.
+stamp() {
+	cat docs/*.wasm docs/go/*.wasm docs/bin/*.wasm docs/*.js docs/go/*.js 2>/dev/null | sha256sum | cut -c1-16 > docs/version.txt
+}
 case "${1:-both}" in
-both)   bottle_js; build_tinygo; build_go; build_demo ;;
-tinygo) bottle_js; build_tinygo ;;
-go)     bottle_js; build_go ;;
-demo)   build_demo ;;
+both)   bottle_js; build_tinygo; build_go; build_demo; stamp ;;
+tinygo) bottle_js; build_tinygo; stamp ;;
+go)     bottle_js; build_go; stamp ;;
+demo)   build_demo; stamp ;;
 term)   build_term ;;
 *)      echo "usage: $0 [both|tinygo|go|demo|term]" >&2; exit 2 ;;
 esac
