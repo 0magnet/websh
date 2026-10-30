@@ -141,7 +141,7 @@ github.com/unixshells/mosh-go
 # github.com/unixshells/vt-go v0.2.0
 ## explicit; go 1.24.2
 github.com/unixshells/vt-go
-# github.com/xo/terminfo v1.2.0
+# github.com/xo/terminfo v1.3.0
 ## explicit; go 1.25
 github.com/xo/terminfo
 # golang.org/x/crypto v0.58.0
