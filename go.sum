@@ -16,8 +16,8 @@ github.com/0magnet/winbox-go v0.0.1-0.20261028211148-34d6e7c4492d h1:eMoEUQtw4n3
 github.com/0magnet/winbox-go v0.0.1-0.20261028211148-34d6e7c4492d/go.mod h1:haaCdC90/H8TsR8O04zqrzpOHFSqMgB6QgnyMIS/FxE=
 github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542 h1:0ZbD1TN5cu6xafopHfxGuqcK8Oxpw+CNAq6TiZomMBc=
 github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542/go.mod h1:Bl0e1pRx3AJB/OlMK0YtMLAGAqqVst3/0wqnVdCCIEs=
-github.com/0magnet/xterm-go v0.0.1-0.20261028211146-6bd2303b2f23 h1:BFC+GKX27ebz5XH+fz1XCXPwDNgP4Z43R66J1g8dDy0=
-github.com/0magnet/xterm-go v0.0.1-0.20261028211146-6bd2303b2f23/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
+github.com/0magnet/xterm-go v0.0.1-0.20261102175652-6023ed24df89 h1:ofWvOgsbCE3T9NFFZzXi0omtXlk9smvDBJkIdrQ/H9A=
+github.com/0magnet/xterm-go v0.0.1-0.20261102175652-6023ed24df89/go.mod h1:W6c6ofSTsxXuQEr1rSZ3qmfOj5a3LGB3uLQBL0/TiKc=
 github.com/benhoyt/goawk v1.32.0 h1:CK/mnBxGsNqX8hdghPIctl2aGIcwfnhT6sv+9M/bY7w=
 github.com/benhoyt/goawk v1.32.0/go.mod h1:jXTQxBxtQ0VsjFqc8dw7tIJj3SDzQN8kcdMq7r83/ZA=
 github.com/charmbracelet/colorprofile v0.4.3 h1:QPa1IWkYI+AOB+fE+mg/5/4HRMZcaXex9t5KX76i20Q=
