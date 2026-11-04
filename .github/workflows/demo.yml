@@ -36,20 +36,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # Go is pinned rather than taken from the runner. TinyGo 0.42 declares
-      # support through Go 1.27 but does not build against it: Go 1.27's
-      # internal/runtime/maps reaches for abi.MapType and abi.MapGroupSlots,
-      # which TinyGo's own reduced internal/abi does not define, and TinyGo
-      # does not override internal/runtime/maps — so the build dies inside Go's
-      # own source. Pinning is what keeps this reproducible.
+      # The newest Go. Released TinyGo 0.42 declares support through Go 1.27
+      # but does not build against it (Go 1.27's internal/runtime/maps reaches
+      # for abi.MapType, which TinyGo's reduced internal/abi lacks), which is
+      # what once pinned this to 1.26.8; the 0magnet/tinygo toolchain below
+      # builds every TinyGo target here with 1.27.
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.26.8'
+          go-version: stable
           cache: false
 
-      - uses: acifani/setup-tinygo@v3
-        with:
-          tinygo-version: '0.42.0'
+      # The 0magnet/tinygo toolchain (develop, rebuilt on every push there),
+      # as chaosrack builds with, not a release.
+      - name: install TinyGo
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/tinygo.tar.gz" https://github.com/0magnet/tinygo/releases/download/toolchain/tinygo.linux-amd64.tar.gz
+          tar -xzf "$RUNNER_TEMP/tinygo.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/tinygo/bin" >> "$GITHUB_PATH"
+      - run: tinygo version
 
       - name: build the demo into docs/
         run: sh build.sh
