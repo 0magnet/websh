@@ -5,11 +5,11 @@ go 1.26.6
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
 	github.com/0magnet/bottle v0.0.1-0.20261028202309-2b922f28f74e
-	github.com/0magnet/calvin v0.0.1-0.20261013221715-da6581155df3
+	github.com/0magnet/calvin v0.0.1-0.20261106130306-95511d0b3e30
 	github.com/0magnet/seat v0.0.0-20261013221028-e66b97ebca1a
 	github.com/0magnet/sh/v3 v3.13.2-0.20261024150911-145e01c63128
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
-	github.com/0magnet/winbox-go v0.0.1-0.20261028211148-34d6e7c4492d
+	github.com/0magnet/winbox-go v0.0.1-0.20261106130421-357df562ff6c
 	github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542
 	github.com/0magnet/xterm-go v0.0.1-0.20261102175652-6023ed24df89
 	github.com/benhoyt/goawk v1.32.0
@@ -47,7 +47,7 @@ require (
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/spf13/pflag v1.1.0 // indirect
 	github.com/xo/terminfo v1.3.1 // indirect
 	golang.org/x/net v0.62.0 // indirect
 	golang.org/x/sync v0.24.0 // indirect
