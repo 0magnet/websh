@@ -5,11 +5,11 @@ go 1.26.6
 require (
 	github.com/0magnet/afero v1.15.1-0.20261003211811-482680d00992
 	github.com/0magnet/bottle v0.0.1-0.20261028202309-2b922f28f74e
-	github.com/0magnet/calvin v0.0.1-0.20261106130306-95511d0b3e30
+	github.com/0magnet/calvin v0.0.1-0.20261109140133-887794fc87eb
 	github.com/0magnet/seat v0.0.0-20261013221028-e66b97ebca1a
 	github.com/0magnet/sh/v3 v3.13.2-0.20261024150911-145e01c63128
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
-	github.com/0magnet/winbox-go v0.0.1-0.20261106130421-357df562ff6c
+	github.com/0magnet/winbox-go v0.0.1-0.20261109140257-4c5c0e948cd6
 	github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542
 	github.com/0magnet/xterm-go v0.0.1-0.20261102175652-6023ed24df89
 	github.com/benhoyt/goawk v1.32.0
@@ -22,7 +22,7 @@ require (
 	github.com/unixshells/mosh-go v0.5.2
 	github.com/unixshells/vt-go v0.2.0
 	golang.org/x/crypto v0.58.0
-	golang.org/x/sys v0.49.0
+	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.47.0
 )
 
@@ -50,6 +50,6 @@ require (
 	github.com/spf13/pflag v1.1.0 // indirect
 	github.com/xo/terminfo v1.3.1 // indirect
 	golang.org/x/net v0.62.0 // indirect
-	golang.org/x/sync v0.24.0 // indirect
+	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/text v0.43.0 // indirect
 )
