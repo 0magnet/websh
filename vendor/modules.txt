@@ -31,7 +31,7 @@ github.com/0magnet/u-root/pkg/ls
 # github.com/0magnet/winbox-go v0.0.1-0.20261109140257-4c5c0e948cd6
 ## explicit; go 1.26.0
 github.com/0magnet/winbox-go
-# github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542
+# github.com/0magnet/wisp v0.0.0-20261118142654-81ef9992502c
 ## explicit; go 1.26.4
 github.com/0magnet/wisp
 # github.com/0magnet/xterm-go v0.0.1-0.20261113221359-36e33e634de1
@@ -53,7 +53,7 @@ github.com/charmbracelet/colorprofile
 ## explicit; go 1.26.0
 github.com/charmbracelet/ultraviolet
 github.com/charmbracelet/ultraviolet/screen
-# github.com/charmbracelet/x/ansi v0.11.9
+# github.com/charmbracelet/x/ansi v0.11.10
 ## explicit; go 1.24.2
 github.com/charmbracelet/x/ansi
 github.com/charmbracelet/x/ansi/kitty
@@ -156,7 +156,7 @@ golang.org/x/crypto/internal/poly1305
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/knownhosts
-# golang.org/x/net v0.62.0
+# golang.org/x/net v0.63.0
 ## explicit; go 1.26.0
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy

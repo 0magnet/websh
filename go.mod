@@ -10,7 +10,7 @@ require (
 	github.com/0magnet/sh/v3 v3.13.2-0.20261024150911-145e01c63128
 	github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 	github.com/0magnet/winbox-go v0.0.1-0.20261109140257-4c5c0e948cd6
-	github.com/0magnet/wisp v0.0.0-20261028112650-b15df570c542
+	github.com/0magnet/wisp v0.0.0-20261118142654-81ef9992502c
 	github.com/0magnet/xterm-go v0.0.1-0.20261113221359-36e33e634de1
 	github.com/benhoyt/goawk v1.32.0
 	github.com/coder/websocket v1.8.15
@@ -30,7 +30,7 @@ require (
 	github.com/0magnet/coloredcobra v1.0.4-0.20261012213101-faa6bd8f94c5 // indirect
 	github.com/charmbracelet/colorprofile v0.4.3 // indirect
 	github.com/charmbracelet/ultraviolet v0.0.0-20261023060817-a45b7c86333f // indirect
-	github.com/charmbracelet/x/ansi v0.11.9 // indirect
+	github.com/charmbracelet/x/ansi v0.11.10 // indirect
 	github.com/charmbracelet/x/exp/ordered v0.1.0 // indirect
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/charmbracelet/x/termios v0.1.1 // indirect
@@ -49,7 +49,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.1.0 // indirect
 	github.com/xo/terminfo v1.3.1 // indirect
-	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 )
