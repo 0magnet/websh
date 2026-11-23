@@ -1,0 +1,10 @@
+commands/commands.go
+commands/serve.go
+shell/applets.go
+shell/applets2.go
+shell/awk.go
+shell/edit.go
+shell/imgcat.go
+shell/jq.go
+shell/pager.go
+web/a11y.go

@@ -218,8 +218,8 @@ func TestCancelSleep(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	cancel()
 	select {
-	case <-done:
-		// returned promptly after cancel
+	case err := <-done:
+		t.Logf("Run returned %v", err)
 	case <-time.After(2 * time.Second):
 		t.Fatal("sleep did not cancel")
 	}

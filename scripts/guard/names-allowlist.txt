@@ -1,0 +1,7 @@
+cmd/websh/persist.go:fileRecord.isDir
+cmd/websh/persist.go:fileSig.isDir
+shell/complete.go:Shell.Complete(isFirstWord)
+shell/pty/handler.go:Handler
+shell/sed/sed.go:input.hasNext
+term/term.go:Handler
+web/session.go:Session.complete(isFirstWord)
