@@ -6,7 +6,7 @@ github.com/0magnet/afero/mem
 # github.com/0magnet/bottle v0.0.1-0.20261028202309-2b922f28f74e
 ## explicit; go 1.24
 github.com/0magnet/bottle/proc
-# github.com/0magnet/calvin v0.0.1-0.20261123113739-17ec6c31723c
+# github.com/0magnet/calvin v0.0.1-0.20261125222219-4228c77b6748
 ## explicit; go 1.26.0
 github.com/0magnet/calvin
 github.com/0magnet/calvin/clihelp
@@ -28,7 +28,7 @@ github.com/0magnet/sh/v3/syntax
 # github.com/0magnet/u-root v0.16.1-0.20261003214924-44e47b732754
 ## explicit; go 1.26.6
 github.com/0magnet/u-root/pkg/ls
-# github.com/0magnet/winbox-go v0.0.1-0.20261123161251-43842cba2e0c
+# github.com/0magnet/winbox-go v0.0.1-0.20261126152900-d5f76c817f58
 ## explicit; go 1.26.0
 github.com/0magnet/winbox-go
 # github.com/0magnet/wisp v0.0.0-20261123111726-3f9b5e8027cd
@@ -53,7 +53,7 @@ github.com/charmbracelet/colorprofile
 ## explicit; go 1.26.0
 github.com/charmbracelet/ultraviolet
 github.com/charmbracelet/ultraviolet/screen
-# github.com/charmbracelet/x/ansi v0.11.10
+# github.com/charmbracelet/x/ansi v0.12.0
 ## explicit; go 1.24.2
 github.com/charmbracelet/x/ansi
 github.com/charmbracelet/x/ansi/kitty
