@@ -799,8 +799,11 @@
 self.onmessage = async (ev) => {
   const m = ev.data;
   try {
-    importScripts(m.assets.fsbridge, m.assets.wasmExec);
+    // The filesystem before the loader: TinyGo's decides when it loads whether
+    // there is a globalThis.fs, and without one answers every file call ENOSYS.
+    importScripts(m.assets.fsbridge);
     fsbridge.install(m.sab, { cwd: m.cwd });
+    importScripts(m.assets.wasmExec);
 
     // stdout/stderr go home as messages, not through the filesystem. The buffer
     // is copied first: it is a view onto the wasm instance's memory, and
